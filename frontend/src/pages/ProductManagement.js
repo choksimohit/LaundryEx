@@ -380,7 +380,7 @@ export const ProductManagement = () => {
                       )}
                       
                       <div className="flex-1">
-                        <h4 className="font-medium text-lg">{product.name}</h4>
+                        <h4 className="font-medium text-lg text-slate-800">{product.name}</h4>
                         {product.subcategory && (
                           <p className="text-sm text-slate-500">{product.subcategory}</p>
                         )}
