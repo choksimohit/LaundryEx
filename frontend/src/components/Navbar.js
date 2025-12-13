@@ -54,12 +54,12 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
               <Link to="/" className="text-slate-700 hover:text-blue-600 font-medium">
                 HOME
               </Link>
+              <Link to="/services" className="text-slate-700 hover:text-blue-600 font-medium" data-testid="services-nav-link">
+                SERVICE
+              </Link>
               {user && user.role === 'customer' && (
                 <>
-                  <Link to="/services" className="text-slate-700 hover:text-blue-600 font-medium" data-testid="services-nav-link">
-                    SERVICE
-                  </Link>
-                  <Link to="/services" className="text-slate-700 hover:text-blue-600 font-medium">
+                  <Link to="/order" className="text-slate-700 hover:text-blue-600 font-medium" data-testid="order-nav-link">
                     ORDER NOW
                   </Link>
                   <Link to="/dashboard" className="text-slate-700 hover:text-blue-600 font-medium">
