@@ -1,0 +1,98 @@
+{
+  "timestamp": "2025-12-13T12:33:41.890841",
+  "total_tests": 18,
+  "passed_tests": 18,
+  "success_rate": 100.0,
+  "results": [
+    {
+      "test": "Pin Code Check - Valid (CO27FQ)",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Pin Code Check - Valid (CO1)",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Pin Code Check - Invalid (INVALID)",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "User Registration",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "User Login",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Admin Login",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get Service Types",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get Categories for Dry Cleaning",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get Products",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get Products for Dry Cleaning",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create Order",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get User Orders",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Minimum Order Validation",
+      "status": "PASSED",
+      "details": "Status: 400"
+    },
+    {
+      "test": "Admin Stats",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Admin Orders",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Admin Businesses",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create Product",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create Business",
+      "status": "PASSED",
+      "details": "Status: 200"
+    }
+  ]
+}
