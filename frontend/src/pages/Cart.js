@@ -50,7 +50,7 @@ export const Cart = () => {
             <p className="text-slate-600 mb-6">Your cart is empty</p>
             <Button
               onClick={() => navigate('/services')}
-              className="rounded-full bg-indigo-600 hover:bg-indigo-700"
+              className="rounded-full bg-blue-600 hover:bg-blue-700"
               data-testid="browse-services-button"
             >
               Browse Services
