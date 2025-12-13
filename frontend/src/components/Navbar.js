@@ -13,6 +13,14 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
     navigate('/login');
   };
 
+  const handleCartClick = () => {
+    if (!user) {
+      navigate('/login');
+    } else {
+      navigate('/cart');
+    }
+  };
+
   return (
     <>
       <div className="bg-blue-600 text-white py-2" data-testid="top-bar">
@@ -75,19 +83,21 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
             <div className="flex items-center gap-4">
               {user ? (
                 <>
-                  {user.role === 'customer' && (
-                    <Link to="/cart" className="relative" data-testid="cart-link">
-                      <Button className="rounded-md bg-blue-600 hover:bg-blue-700">
-                        <ShoppingCart className="h-5 w-5 mr-2" />
-                        Cart
-                        {cartItemsCount > 0 && (
-                          <span className="ml-2 bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold" data-testid="cart-count">
-                            {cartItemsCount}
-                          </span>
-                        )}
-                      </Button>
-                    </Link>
-                  )}
+                  <button
+                    onClick={handleCartClick}
+                    className="relative" 
+                    data-testid="cart-link"
+                  >
+                    <Button className="rounded-md bg-blue-600 hover:bg-blue-700">
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      Cart
+                      {cartItemsCount > 0 && (
+                        <span className="ml-2 bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold" data-testid="cart-count">
+                          {cartItemsCount}
+                        </span>
+                      )}
+                    </Button>
+                  </button>
                   <Button
                     onClick={handleLogout}
                     variant="ghost"
@@ -104,11 +114,21 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
                       Login
                     </Button>
                   </Link>
-                  <Link to="/register" data-testid="register-link">
-                    <Button className="bg-blue-600 hover:bg-blue-700 rounded-full">
-                      GET A QUOTE
+                  <button
+                    onClick={handleCartClick}
+                    className="relative"
+                    data-testid="cart-button"
+                  >
+                    <Button className="rounded-md bg-blue-600 hover:bg-blue-700">
+                      <ShoppingCart className="h-5 w-5 mr-2" />
+                      Cart
+                      {cartItemsCount > 0 && (
+                        <span className="ml-2 bg-white text-blue-600 rounded-full px-2 py-0.5 text-xs font-bold" data-testid="cart-count">
+                          {cartItemsCount}
+                        </span>
+                      )}
                     </Button>
-                  </Link>
+                  </button>
                 </>
               )}
             </div>
