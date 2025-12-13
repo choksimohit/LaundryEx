@@ -24,7 +24,7 @@ export const Landing = () => {
         toast.success('Service is available!');
         sessionStorage.setItem('pinCode', pinCode.toUpperCase());
         sessionStorage.setItem('businesses', JSON.stringify(response.data.businesses));
-        navigate('/services');
+        navigate('/order');
       } else {
         toast.error('Service not available in your area yet');
       }
