@@ -1,8 +1,8 @@
 {
-  "timestamp": "2025-12-13T11:43:41.261474",
+  "timestamp": "2025-12-13T11:44:00.841382",
   "total_tests": 13,
-  "passed_tests": 12,
-  "success_rate": 92.3076923076923,
+  "passed_tests": 13,
+  "success_rate": 100.0,
   "results": [
     {
       "test": "Pin Code Check - Valid (SW1A1AA)",
@@ -36,8 +36,8 @@
     },
     {
       "test": "Create Order",
-      "status": "FAILED",
-      "details": "Status: 400, Response: {'detail': 'Minimum order value is \u00a330'}"
+      "status": "PASSED",
+      "details": "Status: 200"
     },
     {
       "test": "Get User Orders",
