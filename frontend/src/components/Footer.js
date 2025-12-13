@@ -52,7 +52,12 @@ export const Footer = () => {
               </li>
               <li>
                 <Link to="/services" className="hover:text-yellow-400 transition-colors flex items-center gap-2">
-                  <span className="text-yellow-400">→</span> Service
+                  <span className="text-yellow-400">→</span> Services
+                </Link>
+              </li>
+              <li>
+                <Link to="/order" className="hover:text-yellow-400 transition-colors flex items-center gap-2">
+                  <span className="text-yellow-400">→</span> Order Now
                 </Link>
               </li>
               <li>
