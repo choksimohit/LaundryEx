@@ -352,7 +352,7 @@ export const ProductManagement = () => {
         {Object.entries(groupedProducts).map(([groupKey, groupProducts]) => (
           <div key={groupKey} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-              <h3 className="font-semibold text-lg">{groupKey}</h3>
+              <h3 className="font-semibold text-lg text-blue-600">{groupKey}</h3>
               <p className="text-sm text-slate-600">{groupProducts.length} product(s)</p>
             </div>
             
