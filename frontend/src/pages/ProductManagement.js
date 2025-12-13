@@ -159,7 +159,7 @@ export const ProductManagement = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="add-product-button">
+            <Button className="bg-green-600 hover:bg-green-700" data-testid="add-product-button">
               <Plus className="h-4 w-4 mr-2" />
               Add Product
             </Button>
