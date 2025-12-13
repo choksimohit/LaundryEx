@@ -49,7 +49,7 @@ export const OrderConfirmation = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">Total Amount</span>
-              <span className="font-medium text-indigo-600" data-testid="order-total">£{order.total_amount.toFixed(2)}</span>
+              <span className="font-medium text-blue-600" data-testid="order-total">£{order.total_amount.toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">Payment Method</span>
@@ -79,7 +79,7 @@ export const OrderConfirmation = () => {
         <div className="flex gap-4">
           <Button
             onClick={() => navigate('/dashboard')}
-            className="flex-1 h-12 rounded-full bg-indigo-600 hover:bg-indigo-700"
+            className="flex-1 h-12 rounded-full bg-blue-600 hover:bg-blue-700"
             data-testid="view-orders-button"
           >
             View All Orders

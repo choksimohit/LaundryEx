@@ -77,7 +77,7 @@ export const Checkout = () => {
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-2 mb-6">
-                  <Calendar className="h-5 w-5 text-indigo-600" />
+                  <Calendar className="h-5 w-5 text-blue-600" />
                   <h2 className="text-xl font-semibold">Pickup Schedule</h2>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -112,7 +112,7 @@ export const Checkout = () => {
 
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-2 mb-6">
-                  <Clock className="h-5 w-5 text-indigo-600" />
+                  <Clock className="h-5 w-5 text-blue-600" />
                   <h2 className="text-xl font-semibold">Delivery Schedule</h2>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -147,7 +147,7 @@ export const Checkout = () => {
 
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-2 mb-6">
-                  <MapPin className="h-5 w-5 text-indigo-600" />
+                  <MapPin className="h-5 w-5 text-blue-600" />
                   <h2 className="text-xl font-semibold">Delivery Address</h2>
                 </div>
                 <div className="space-y-4">
@@ -183,7 +183,7 @@ export const Checkout = () => {
 
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-2 mb-6">
-                  <CreditCard className="h-5 w-5 text-indigo-600" />
+                  <CreditCard className="h-5 w-5 text-blue-600" />
                   <h2 className="text-xl font-semibold">Payment Method</h2>
                 </div>
                 <RadioGroup
@@ -209,7 +209,7 @@ export const Checkout = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all"
+                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all"
                 data-testid="place-order-button"
               >
                 {loading ? 'Placing Order...' : `Place Order - £${totalAmount.toFixed(2)}`}
@@ -233,7 +233,7 @@ export const Checkout = () => {
               <div className="border-t border-slate-200 pt-4">
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold">Total</span>
-                  <span className="text-2xl font-bold text-indigo-600" data-testid="checkout-total">£{totalAmount.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-blue-600" data-testid="checkout-total">£{totalAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>

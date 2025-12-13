@@ -75,7 +75,7 @@ export const Login = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all"
+              className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all"
               data-testid="login-submit-button"
             >
               {loading ? 'Logging in...' : 'Login'}
@@ -85,7 +85,7 @@ export const Login = () => {
           <div className="mt-6 text-center">
             <p className="text-slate-600">
               Don't have an account?{' '}
-              <Link to="/register" className="text-indigo-600 font-medium hover:underline" data-testid="register-link">
+              <Link to="/register" className="text-blue-600 font-medium hover:underline" data-testid="register-link">
                 Sign up
               </Link>
             </p>

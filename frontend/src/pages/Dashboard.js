@@ -98,7 +98,7 @@ export const Dashboard = () => {
                 <div className="border-t border-slate-200 pt-4">
                   <div className="flex justify-between items-center">
                     <span className="text-slate-600">{order.items.length} item(s)</span>
-                    <span className="text-xl font-bold text-indigo-600" data-testid={`order-amount-${order.id}`}>
+                    <span className="text-xl font-bold text-blue-600" data-testid={`order-amount-${order.id}`}>
                       £{order.total_amount.toFixed(2)}
                     </span>
                   </div>

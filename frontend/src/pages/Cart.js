@@ -113,7 +113,7 @@ export const Cart = () => {
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-lg font-medium">Total Amount</span>
-                <span className="text-2xl font-bold text-indigo-600" data-testid="cart-total">£{totalAmount.toFixed(2)}</span>
+                <span className="text-2xl font-bold text-blue-600" data-testid="cart-total">£{totalAmount.toFixed(2)}</span>
               </div>
 
               {!canCheckout && (
@@ -127,7 +127,7 @@ export const Cart = () => {
               <Button
                 onClick={() => navigate('/checkout')}
                 disabled={!canCheckout}
-                className="w-full h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 data-testid="proceed-to-checkout-button"
               >
                 Proceed to Checkout

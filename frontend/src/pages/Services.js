@@ -147,13 +147,13 @@ export const Services = () => {
                   {service.description}
                 </p>
                 <div className="flex items-center justify-between">
-                  <span className="text-2xl font-bold text-indigo-600" data-testid={`service-price-${service.id}`}>
+                  <span className="text-2xl font-bold text-blue-600" data-testid={`service-price-${service.id}`}>
                     £{service.base_price.toFixed(2)}
                   </span>
                   {quantity === 0 ? (
                     <Button
                       onClick={() => addToCart(service)}
-                      className="rounded-full bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all"
+                      className="rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all"
                       data-testid={`add-to-cart-${service.id}`}
                     >
                       <Plus className="h-4 w-4 mr-2" />
@@ -173,7 +173,7 @@ export const Services = () => {
                       <span className="font-medium w-8 text-center" data-testid={`quantity-${service.id}`}>{quantity}</span>
                       <Button
                         size="icon"
-                        className="rounded-full bg-indigo-600 hover:bg-indigo-700"
+                        className="rounded-full bg-blue-600 hover:bg-blue-700"
                         onClick={() => updateQuantity(service.id, 1)}
                         data-testid={`increase-quantity-${service.id}`}
                       >
@@ -195,7 +195,7 @@ export const Services = () => {
             <Button
               onClick={goToCart}
               size="lg"
-              className="rounded-full bg-indigo-600 hover:bg-indigo-700 shadow-2xl shadow-indigo-500/30 hover:scale-105 transition-all"
+              className="rounded-full bg-blue-600 hover:bg-blue-700 shadow-2xl shadow-indigo-500/30 hover:scale-105 transition-all"
               data-testid="view-cart-button"
             >
               <ShoppingCart className="h-5 w-5 mr-2" />

@@ -125,7 +125,7 @@ export const Admin = () => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" data-testid="admin-stats">
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Total Orders</p>
-              <p className="text-3xl font-bold text-indigo-600" data-testid="stat-total-orders">{stats.total_orders}</p>
+              <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-orders">{stats.total_orders}</p>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Total Revenue</p>
@@ -133,11 +133,11 @@ export const Admin = () => {
             </div>
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Businesses</p>
-              <p className="text-3xl font-bold text-indigo-600" data-testid="stat-total-businesses">{stats.total_businesses}</p>
+              <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-businesses">{stats.total_businesses}</p>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Services</p>
-              <p className="text-3xl font-bold text-indigo-600" data-testid="stat-total-services">{stats.total_services}</p>
+              <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-services">{stats.total_services}</p>
             </div>
           </div>
         )}
@@ -159,7 +159,7 @@ export const Admin = () => {
                     <p className="text-sm text-slate-600">Email: {order.user_email}</p>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-indigo-600 mb-2">£{order.total_amount.toFixed(2)}</p>
+                    <p className="text-2xl font-bold text-blue-600 mb-2">£{order.total_amount.toFixed(2)}</p>
                     <Select
                       value={order.status}
                       onValueChange={(value) => updateOrderStatus(order.id, value)}
@@ -221,7 +221,7 @@ export const Admin = () => {
                       data-testid="pin-codes-input"
                     />
                   </div>
-                  <Button type="submit" className="rounded-full bg-indigo-600 hover:bg-indigo-700" data-testid="create-business-button">
+                  <Button type="submit" className="rounded-full bg-blue-600 hover:bg-blue-700" data-testid="create-business-button">
                     Create Business
                   </Button>
                 </form>
@@ -319,7 +319,7 @@ export const Admin = () => {
                     data-testid="service-image-input"
                   />
                 </div>
-                <Button type="submit" className="rounded-full bg-indigo-600 hover:bg-indigo-700" data-testid="create-service-button">
+                <Button type="submit" className="rounded-full bg-blue-600 hover:bg-blue-700" data-testid="create-service-button">
                   Create Service
                 </Button>
               </form>

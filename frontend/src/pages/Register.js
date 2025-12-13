@@ -110,7 +110,7 @@ export const Register = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full h-12 rounded-full bg-indigo-600 hover:bg-indigo-700 hover:scale-105 transition-all"
+              className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all"
               data-testid="register-submit-button"
             >
               {loading ? 'Creating account...' : 'Create Account'}
@@ -120,7 +120,7 @@ export const Register = () => {
           <div className="mt-6 text-center">
             <p className="text-slate-600">
               Already have an account?{' '}
-              <Link to="/login" className="text-indigo-600 font-medium hover:underline" data-testid="login-link">
+              <Link to="/login" className="text-blue-600 font-medium hover:underline" data-testid="login-link">
                 Login
               </Link>
             </p>
