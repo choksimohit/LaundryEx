@@ -106,8 +106,8 @@ export const Admin = () => {
               <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-businesses">{stats.total_businesses}</p>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
-              <p className="text-sm text-slate-600 mb-2">Services</p>
-              <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-services">{stats.total_services}</p>
+              <p className="text-sm text-slate-600 mb-2">Products</p>
+              <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-products">{stats.total_products}</p>
             </div>
           </div>
         )}
