@@ -145,8 +145,14 @@ async def seed_database():
         products.append(product_doc)
     
     await db.products.insert_many(products)
-    print(f"Created {len(products)} products")\n    
-    print("\\nDatabase seeding completed!")\n    print("\\nAdmin credentials:")\n    print("Email: admin@laundry-express.co.uk")\n    print("Password: admin123")\n    print("\\nAvailable pin codes: CO27FQ, CO1, CO2, CO3, CO4, CO5")\n    
+    print(f"Created {len(products)} products")
+    
+    print("\nDatabase seeding completed!")
+    print("\nAdmin credentials:")
+    print("Email: admin@laundry-express.co.uk")
+    print("Password: admin123")
+    print("\nAvailable pin codes: CO27FQ, CO1, CO2, CO3, CO4, CO5")
+    
     client.close()
 
 if __name__ == "__main__":
