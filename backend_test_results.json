@@ -1,0 +1,73 @@
+{
+  "timestamp": "2025-12-13T11:43:41.261474",
+  "total_tests": 13,
+  "passed_tests": 12,
+  "success_rate": 92.3076923076923,
+  "results": [
+    {
+      "test": "Pin Code Check - Valid (SW1A1AA)",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Pin Code Check - Invalid (INVALID)",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "User Registration",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "User Login",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Admin Login",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Get All Services",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create Order",
+      "status": "FAILED",
+      "details": "Status: 400, Response: {'detail': 'Minimum order value is \u00a330'}"
+    },
+    {
+      "test": "Get User Orders",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Minimum Order Validation",
+      "status": "PASSED",
+      "details": "Status: 400"
+    },
+    {
+      "test": "Admin Stats",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Admin Orders",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Admin Businesses",
+      "status": "PASSED",
+      "details": "Status: 200"
+    },
+    {
+      "test": "Create Business",
+      "status": "PASSED",
+      "details": "Status: 200"
+    }
+  ]
+}
