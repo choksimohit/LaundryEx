@@ -89,7 +89,7 @@ export const Admin = () => {
   return (
     <div className="min-h-screen bg-slate-50" data-testid="admin-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-8">Admin Panel</h1>
+        <h1 className="text-3xl md:text-5xl font-semibold tracking-tight mb-8 text-blue-600">Admin Panel</h1>
 
         {stats && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" data-testid="admin-stats">
