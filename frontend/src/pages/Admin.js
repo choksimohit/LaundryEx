@@ -146,8 +146,8 @@ export const Admin = () => {
         <Tabs defaultValue="orders" className="space-y-6">
           <TabsList className="bg-white rounded-full p-2">
             <TabsTrigger value="orders" className="rounded-full" data-testid="tab-orders">Orders</TabsTrigger>
+            <TabsTrigger value="products" className="rounded-full" data-testid="tab-products">Products</TabsTrigger>
             <TabsTrigger value="businesses" className="rounded-full" data-testid="tab-businesses">Businesses</TabsTrigger>
-            <TabsTrigger value="services" className="rounded-full" data-testid="tab-services">Services</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="space-y-6" data-testid="orders-tab-content">
