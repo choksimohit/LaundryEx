@@ -1,72 +1,351 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
 from pathlib import Path
-from pydantic import BaseModel, Field, ConfigDict
-from typing import List
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
+from typing import List, Optional
 import uuid
-from datetime import datetime, timezone
-
+from datetime import datetime, timezone, timedelta
+from passlib.context import CryptContext
+from jose import JWTError, jwt
+import stripe
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
 
-# MongoDB connection
 mongo_url = os.environ['MONGO_URL']
 client = AsyncIOMotorClient(mongo_url)
 db = client[os.environ['DB_NAME']]
 
-# Create the main app without a prefix
-app = FastAPI()
+stripe.api_key = os.environ.get('STRIPE_SECRET_KEY')
+JWT_SECRET = os.environ.get('JWT_SECRET')
+JWT_ALGORITHM = os.environ.get('JWT_ALGORITHM', 'HS256')
 
-# Create a router with the /api prefix
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+security = HTTPBearer()
+
+app = FastAPI()
 api_router = APIRouter(prefix="/api")
 
+class UserRegister(BaseModel):
+    email: EmailStr
+    password: str
+    name: str
+    phone: str
 
-# Define Models
-class StatusCheck(BaseModel):
-    model_config = ConfigDict(extra="ignore")  # Ignore MongoDB's _id field
+class UserLogin(BaseModel):
+    email: EmailStr
+    password: str
+
+class User(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    email: str
+    name: str
+    phone: str
+    role: str
+    created_at: str
+
+class PinCodeCheck(BaseModel):
+    pin_code: str
+
+class PinCodeResponse(BaseModel):
+    available: bool
+    businesses: List[dict] = []
+
+class Service(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    business_id: str
+    business_name: str
+    name: str
+    category: str
+    base_price: float
+    description: str
+    image_url: Optional[str] = None
+
+class CartItem(BaseModel):
+    service_id: str
+    service_name: str
+    business_id: str
+    business_name: str
+    price: float
+    quantity: int
+
+class OrderCreate(BaseModel):
+    items: List[CartItem]
+    pickup_date: str
+    pickup_time: str
+    delivery_date: str
+    delivery_time: str
+    address: str
+    pin_code: str
+    payment_method: str
+    total_amount: float
+
+class Order(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    user_id: str
+    items: List[dict]
+    pickup_date: str
+    pickup_time: str
+    delivery_date: str
+    delivery_time: str
+    address: str
+    pin_code: str
+    payment_method: str
+    payment_status: str
+    total_amount: float
+    status: str
+    created_at: str
+
+class Business(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    id: str
+    name: str
+    owner_email: str
+    pin_codes: List[str]
+    created_at: str
+
+class BusinessCreate(BaseModel):
+    name: str
+    owner_email: str
+    pin_codes: List[str]
+
+class ServiceCreate(BaseModel):
+    business_id: str
+    name: str
+    category: str
+    base_price: float
+    description: str
+    image_url: Optional[str] = None
+
+class OrderStatusUpdate(BaseModel):
+    status: str
+
+def hash_password(password: str) -> str:
+    return pwd_context.hash(password)
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def create_access_token(data: dict) -> str:
+    to_encode = data.copy()
+    expire = datetime.now(timezone.utc) + timedelta(days=7)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, JWT_SECRET, algorithm=JWT_ALGORITHM)
+
+async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
+    try:
+        token = credentials.credentials
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        user_id = payload.get("sub")
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+        user = await db.users.find_one({"id": user_id}, {"_id": 0})
+        if user is None:
+            raise HTTPException(status_code=401, detail="User not found")
+        return user
+    except JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+
+async def get_admin_user(current_user: dict = Depends(get_current_user)):
+    if current_user["role"] not in ["business_admin", "platform_admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
+@api_router.post("/auth/register")
+async def register(user_data: UserRegister):
+    existing = await db.users.find_one({"email": user_data.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
     
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()))
-    client_name: str
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-
-class StatusCheckCreate(BaseModel):
-    client_name: str
-
-# Add your routes to the router instead of directly to app
-@api_router.get("/")
-async def root():
-    return {"message": "Hello World"}
-
-@api_router.post("/status", response_model=StatusCheck)
-async def create_status_check(input: StatusCheckCreate):
-    status_dict = input.model_dump()
-    status_obj = StatusCheck(**status_dict)
+    user_id = str(uuid.uuid4())
+    user_doc = {
+        "id": user_id,
+        "email": user_data.email,
+        "password": hash_password(user_data.password),
+        "name": user_data.name,
+        "phone": user_data.phone,
+        "role": "customer",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.users.insert_one(user_doc)
     
-    # Convert to dict and serialize datetime to ISO string for MongoDB
-    doc = status_obj.model_dump()
-    doc['timestamp'] = doc['timestamp'].isoformat()
-    
-    _ = await db.status_checks.insert_one(doc)
-    return status_obj
+    token = create_access_token({"sub": user_id, "email": user_data.email, "role": "customer"})
+    return {"token": token, "user": {"id": user_id, "email": user_data.email, "name": user_data.name, "role": "customer"}}
 
-@api_router.get("/status", response_model=List[StatusCheck])
-async def get_status_checks():
-    # Exclude MongoDB's _id field from the query results
-    status_checks = await db.status_checks.find({}, {"_id": 0}).to_list(1000)
+@api_router.post("/auth/login")
+async def login(credentials: UserLogin):
+    user = await db.users.find_one({"email": credentials.email}, {"_id": 0})
+    if not user or not verify_password(credentials.password, user["password"]):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    # Convert ISO string timestamps back to datetime objects
-    for check in status_checks:
-        if isinstance(check['timestamp'], str):
-            check['timestamp'] = datetime.fromisoformat(check['timestamp'])
-    
-    return status_checks
+    token = create_access_token({"sub": user["id"], "email": user["email"], "role": user["role"]})
+    return {"token": token, "user": {"id": user["id"], "email": user["email"], "name": user["name"], "role": user["role"]}}
 
-# Include the router in the main app
+@api_router.get("/auth/me")
+async def get_me(current_user: dict = Depends(get_current_user)):
+    return {"id": current_user["id"], "email": current_user["email"], "name": current_user["name"], "role": current_user["role"]}
+
+@api_router.post("/pincode/check", response_model=PinCodeResponse)
+async def check_pincode(data: PinCodeCheck):
+    businesses = await db.businesses.find(
+        {"pin_codes": data.pin_code},
+        {"_id": 0}
+    ).to_list(100)
+    
+    return {
+        "available": len(businesses) > 0,
+        "businesses": businesses
+    }
+
+@api_router.get("/services")
+async def get_services(business_id: Optional[str] = None, category: Optional[str] = None):
+    query = {}
+    if business_id:
+        query["business_id"] = business_id
+    if category:
+        query["category"] = category
+    
+    services = await db.services.find(query, {"_id": 0}).to_list(1000)
+    return services
+
+@api_router.post("/orders")
+async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
+    if order_data.total_amount < 30:
+        raise HTTPException(status_code=400, detail="Minimum order value is £30")
+    
+    order_id = str(uuid.uuid4())
+    order_doc = {
+        "id": order_id,
+        "user_id": current_user["id"],
+        "user_name": current_user["name"],
+        "user_email": current_user["email"],
+        "items": [item.model_dump() for item in order_data.items],
+        "pickup_date": order_data.pickup_date,
+        "pickup_time": order_data.pickup_time,
+        "delivery_date": order_data.delivery_date,
+        "delivery_time": order_data.delivery_time,
+        "address": order_data.address,
+        "pin_code": order_data.pin_code,
+        "payment_method": order_data.payment_method,
+        "payment_status": "pending" if order_data.payment_method == "stripe" else "cod",
+        "total_amount": order_data.total_amount,
+        "status": "pending",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.orders.insert_one(order_doc)
+    
+    return {"order_id": order_id, "status": "success"}
+
+@api_router.post("/payment/create-intent")
+async def create_payment_intent(data: dict, current_user: dict = Depends(get_current_user)):
+    try:
+        intent = stripe.PaymentIntent.create(
+            amount=int(data["amount"] * 100),
+            currency="gbp",
+            metadata={"order_id": data.get("order_id")}
+        )
+        return {"client_secret": intent.client_secret}
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@api_router.get("/orders")
+async def get_orders(current_user: dict = Depends(get_current_user)):
+    query = {"user_id": current_user["id"]} if current_user["role"] == "customer" else {}
+    orders = await db.orders.find(query, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return orders
+
+@api_router.get("/orders/{order_id}")
+async def get_order(order_id: str, current_user: dict = Depends(get_current_user)):
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    if current_user["role"] == "customer" and order["user_id"] != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Access denied")
+    return order
+
+@api_router.patch("/admin/orders/{order_id}/status")
+async def update_order_status(order_id: str, data: OrderStatusUpdate, admin: dict = Depends(get_admin_user)):
+    result = await db.orders.update_one(
+        {"id": order_id},
+        {"$set": {"status": data.status}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Order not found")
+    return {"status": "success"}
+
+@api_router.get("/admin/businesses")
+async def get_businesses(admin: dict = Depends(get_admin_user)):
+    businesses = await db.businesses.find({}, {"_id": 0}).to_list(1000)
+    return businesses
+
+@api_router.post("/admin/businesses")
+async def create_business(business_data: BusinessCreate, admin: dict = Depends(get_admin_user)):
+    if admin["role"] not in ["platform_admin", "super_admin"]:
+        raise HTTPException(status_code=403, detail="Platform admin access required")
+    
+    business_id = str(uuid.uuid4())
+    business_doc = {
+        "id": business_id,
+        "name": business_data.name,
+        "owner_email": business_data.owner_email,
+        "pin_codes": business_data.pin_codes,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.businesses.insert_one(business_doc)
+    return {"business_id": business_id, "status": "success"}
+
+@api_router.post("/admin/services")
+async def create_service(service_data: ServiceCreate, admin: dict = Depends(get_admin_user)):
+    business = await db.businesses.find_one({"id": service_data.business_id}, {"_id": 0})
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    service_id = str(uuid.uuid4())
+    service_doc = {
+        "id": service_id,
+        "business_id": service_data.business_id,
+        "business_name": business["name"],
+        "name": service_data.name,
+        "category": service_data.category,
+        "base_price": service_data.base_price,
+        "description": service_data.description,
+        "image_url": service_data.image_url,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.services.insert_one(service_doc)
+    return {"service_id": service_id, "status": "success"}
+
+@api_router.get("/admin/orders")
+async def get_admin_orders(admin: dict = Depends(get_admin_user)):
+    orders = await db.orders.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
+    return orders
+
+@api_router.get("/admin/stats")
+async def get_admin_stats(admin: dict = Depends(get_admin_user)):
+    total_orders = await db.orders.count_documents({})
+    total_revenue = await db.orders.aggregate([
+        {"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}
+    ]).to_list(1)
+    total_businesses = await db.businesses.count_documents({})
+    total_services = await db.services.count_documents({})
+    
+    revenue = total_revenue[0]["total"] if total_revenue else 0
+    
+    return {
+        "total_orders": total_orders,
+        "total_revenue": revenue,
+        "total_businesses": total_businesses,
+        "total_services": total_services
+    }
+
 app.include_router(api_router)
 
 app.add_middleware(
@@ -77,7 +356,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
