@@ -331,6 +331,11 @@ async def create_business(business_data: BusinessCreate, admin: dict = Depends(g
     await db.businesses.insert_one(business_doc)
     return {"business_id": business_id, "status": "success"}
 
+@api_router.get("/admin/products")
+async def get_admin_products(admin: dict = Depends(get_admin_user)):
+    products = await db.products.find({}, {"_id": 0}).to_list(1000)
+    return products
+
 @api_router.post("/admin/products")
 async def create_product(product_data: ProductCreate, admin: dict = Depends(get_admin_user)):
     business = await db.businesses.find_one({"id": product_data.business_id}, {"_id": 0})
@@ -352,6 +357,42 @@ async def create_product(product_data: ProductCreate, admin: dict = Depends(get_
     }
     await db.products.insert_one(product_doc)
     return {"product_id": product_id, "status": "success"}
+
+@api_router.put("/admin/products/{product_id}")
+async def update_product(product_id: str, product_data: ProductCreate, admin: dict = Depends(get_admin_user)):
+    business = await db.businesses.find_one({"id": product_data.business_id}, {"_id": 0})
+    if not business:
+        raise HTTPException(status_code=404, detail="Business not found")
+    
+    update_doc = {
+        "business_id": product_data.business_id,
+        "business_name": business["name"],
+        "service_type": product_data.service_type,
+        "category": product_data.category,
+        "subcategory": product_data.subcategory,
+        "name": product_data.name,
+        "price": product_data.price,
+        "icon_url": product_data.icon_url,
+    }
+    
+    result = await db.products.update_one(
+        {"id": product_id},
+        {"$set": update_doc}
+    )
+    
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    return {"status": "success"}
+
+@api_router.delete("/admin/products/{product_id}")
+async def delete_product(product_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.products.delete_one({"id": product_id})
+    
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Product not found")
+    
+    return {"status": "success"}
 
 @api_router.get("/admin/orders")
 async def get_admin_orders(admin: dict = Depends(get_admin_user)):
