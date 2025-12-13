@@ -83,8 +83,10 @@ class OrderCreate(BaseModel):
     items: List[CartItem]
     pickup_date: str
     pickup_time: str
+    pickup_instruction: str
     delivery_date: str
     delivery_time: str
+    delivery_instruction: str
     address: str
     pin_code: str
     payment_method: str
