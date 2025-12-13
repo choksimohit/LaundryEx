@@ -15,10 +15,10 @@ export const Cart = () => {
     }
   }, []);
 
-  const updateQuantity = (serviceId, delta) => {
+  const updateQuantity = (productId, delta) => {
     const updatedCart = cart
       .map(item =>
-        item.service_id === serviceId
+        item.product_id === productId
           ? { ...item, quantity: Math.max(0, item.quantity + delta) }
           : item
       )
@@ -28,8 +28,8 @@ export const Cart = () => {
     localStorage.setItem('cart', JSON.stringify(updatedCart));
   };
 
-  const removeItem = (serviceId) => {
-    const updatedCart = cart.filter(item => item.service_id !== serviceId);
+  const removeItem = (productId) => {
+    const updatedCart = cart.filter(item => item.product_id !== productId);
     setCart(updatedCart);
     localStorage.setItem('cart', JSON.stringify(updatedCart));
     toast.success('Item removed from cart');
