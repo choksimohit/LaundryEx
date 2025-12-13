@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
 import { getUser } from '../utils/auth';
