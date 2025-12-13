@@ -153,7 +153,7 @@ export const ProductManagement = () => {
   return (
     <div className="space-y-6" data-testid="product-management-page">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Product Management</h2>
+        <h2 className="text-2xl font-bold text-blue-600">Product Management</h2>
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
           setIsDialogOpen(open);
           if (!open) resetForm();
