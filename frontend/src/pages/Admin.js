@@ -27,15 +27,6 @@ export const Admin = () => {
     pin_codes: '',
   });
 
-  const [serviceForm, setServiceForm] = useState({
-    business_id: '',
-    name: '',
-    category: '',
-    base_price: '',
-    description: '',
-    image_url: '',
-  });
-
   useEffect(() => {
     loadStats();
     loadOrders();
