@@ -196,6 +196,10 @@ class LaundryAPITester:
         tomorrow = (datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')
         day_after = (datetime.now() + timedelta(days=2)).strftime('%Y-%m-%d')
         
+        # Calculate quantity to meet £30 minimum
+        quantity_needed = max(2, int(30 / service['base_price']) + 1)
+        total_amount = service['base_price'] * quantity_needed
+        
         order_data = {
             "items": [{
                 "service_id": service['id'],
@@ -203,7 +207,7 @@ class LaundryAPITester:
                 "business_id": service['business_id'],
                 "business_name": service['business_name'],
                 "price": service['base_price'],
-                "quantity": 2
+                "quantity": quantity_needed
             }],
             "pickup_date": tomorrow,
             "pickup_time": "10:00",
@@ -212,7 +216,7 @@ class LaundryAPITester:
             "address": "123 Test Street, London",
             "pin_code": "SW1A1AA",
             "payment_method": "cod",
-            "total_amount": service['base_price'] * 2
+            "total_amount": total_amount
         }
         
         success, response = self.run_test(
