@@ -55,26 +55,26 @@ export const Landing = () => {
             Colchester
           </h1>
 
-          <div className="bg-white rounded-lg p-8 shadow-2xl mt-12" data-testid="pincode-checker">
-            <h3 className="text-xl font-semibold mb-4 text-slate-800">Add your Postcode</h3>
-            <p className="text-sm text-slate-600 mb-4">Please add postcode (eg: CO27FQ)</p>
-            <div className="flex gap-3">
+          <div className="bg-white rounded-lg p-6 shadow-2xl mt-8 max-w-md" data-testid="pincode-checker">
+            <h3 className="text-lg font-semibold mb-2 text-slate-800">Add your Postcode</h3>
+            <p className="text-xs text-slate-600 mb-3">Please add postcode (eg: CO27FQ)</p>
+            <div className="flex gap-2">
               <Input
                 type="text"
-                placeholder="Enter your postcode"
+                placeholder="Enter postcode"
                 value={pinCode}
                 onChange={(e) => setPinCode(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && checkAvailability()}
-                className="h-12 text-lg"
+                className="h-10"
                 data-testid="pincode-input"
               />
               <Button
                 onClick={checkAvailability}
                 disabled={loading}
-                className="h-12 px-8 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+                className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium whitespace-nowrap"
                 data-testid="check-availability-button"
               >
-                Check Postcode
+                Check
               </Button>
             </div>
           </div>
