@@ -57,20 +57,23 @@ class PinCodeResponse(BaseModel):
     available: bool
     businesses: List[dict] = []
 
-class Service(BaseModel):
+class Product(BaseModel):
     model_config = ConfigDict(extra="ignore")
     id: str
     business_id: str
     business_name: str
-    name: str
+    service_type: str
     category: str
-    base_price: float
-    description: str
-    image_url: Optional[str] = None
+    subcategory: Optional[str] = None
+    name: str
+    price: float
+    icon_url: Optional[str] = None
 
 class CartItem(BaseModel):
-    service_id: str
-    service_name: str
+    product_id: str
+    product_name: str
+    category: str
+    subcategory: Optional[str] = None
     business_id: str
     business_name: str
     price: float
@@ -117,13 +120,14 @@ class BusinessCreate(BaseModel):
     owner_email: str
     pin_codes: List[str]
 
-class ServiceCreate(BaseModel):
+class ProductCreate(BaseModel):
     business_id: str
-    name: str
+    service_type: str
     category: str
-    base_price: float
-    description: str
-    image_url: Optional[str] = None
+    subcategory: Optional[str] = None
+    name: str
+    price: float
+    icon_url: Optional[str] = None
 
 class OrderStatusUpdate(BaseModel):
     status: str
@@ -205,16 +209,41 @@ async def check_pincode(data: PinCodeCheck):
         "businesses": businesses
     }
 
-@api_router.get("/services")
-async def get_services(business_id: Optional[str] = None, category: Optional[str] = None):
+@api_router.get("/products")
+async def get_products(business_id: Optional[str] = None, service_type: Optional[str] = None, category: Optional[str] = None):
     query = {}
     if business_id:
         query["business_id"] = business_id
+    if service_type:
+        query["service_type"] = service_type
     if category:
         query["category"] = category
     
-    services = await db.services.find(query, {"_id": 0}).to_list(1000)
-    return services
+    products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    return products
+
+@api_router.get("/service-types")
+async def get_service_types():
+    pipeline = [
+        {"$group": {"_id": "$service_type"}},
+        {"$project": {"_id": 0, "name": "$_id"}}
+    ]
+    service_types = await db.products.aggregate(pipeline).to_list(100)
+    return service_types
+
+@api_router.get("/categories")
+async def get_categories(service_type: Optional[str] = None):
+    query = {}
+    if service_type:
+        query["service_type"] = service_type
+    
+    pipeline = [
+        {"$match": query},
+        {"$group": {"_id": "$category"}},
+        {"$project": {"_id": 0, "name": "$_id"}}
+    ]
+    categories = await db.products.aggregate(pipeline).to_list(100)
+    return categories
 
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
@@ -302,26 +331,27 @@ async def create_business(business_data: BusinessCreate, admin: dict = Depends(g
     await db.businesses.insert_one(business_doc)
     return {"business_id": business_id, "status": "success"}
 
-@api_router.post("/admin/services")
-async def create_service(service_data: ServiceCreate, admin: dict = Depends(get_admin_user)):
-    business = await db.businesses.find_one({"id": service_data.business_id}, {"_id": 0})
+@api_router.post("/admin/products")
+async def create_product(product_data: ProductCreate, admin: dict = Depends(get_admin_user)):
+    business = await db.businesses.find_one({"id": product_data.business_id}, {"_id": 0})
     if not business:
         raise HTTPException(status_code=404, detail="Business not found")
     
-    service_id = str(uuid.uuid4())
-    service_doc = {
-        "id": service_id,
-        "business_id": service_data.business_id,
+    product_id = str(uuid.uuid4())
+    product_doc = {
+        "id": product_id,
+        "business_id": product_data.business_id,
         "business_name": business["name"],
-        "name": service_data.name,
-        "category": service_data.category,
-        "base_price": service_data.base_price,
-        "description": service_data.description,
-        "image_url": service_data.image_url,
+        "service_type": product_data.service_type,
+        "category": product_data.category,
+        "subcategory": product_data.subcategory,
+        "name": product_data.name,
+        "price": product_data.price,
+        "icon_url": product_data.icon_url,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
-    await db.services.insert_one(service_doc)
-    return {"service_id": service_id, "status": "success"}
+    await db.products.insert_one(product_doc)
+    return {"product_id": product_id, "status": "success"}
 
 @api_router.get("/admin/orders")
 async def get_admin_orders(admin: dict = Depends(get_admin_user)):
@@ -335,7 +365,7 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
         {"$group": {"_id": None, "total": {"$sum": "$total_amount"}}}
     ]).to_list(1)
     total_businesses = await db.businesses.count_documents({})
-    total_services = await db.services.count_documents({})
+    total_products = await db.products.count_documents({})
     
     revenue = total_revenue[0]["total"] if total_revenue else 0
     
@@ -343,7 +373,7 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
         "total_orders": total_orders,
         "total_revenue": revenue,
         "total_businesses": total_businesses,
-        "total_services": total_services
+        "total_products": total_products
     }
 
 app.include_router(api_router)
