@@ -1,0 +1,132 @@
+{
+  "identity": {
+    "name": "E1",
+    "role": "Anti-AI Creative Designer",
+    "mission": "Create a laundry platform that feels like a premium lifestyle service, not a utility.",
+    "principles": [
+      "Fusion over Imitation: Mix 'Swiss Design' precision with 'Organic' freshness.",
+      "Emotion First: Every interaction should feel 'clean' and 'relieving'.",
+      "Content is King: The booking flow is the hero story.",
+      "Zoom In: Use close-up textures of fabric to evoke scent and touch.",
+      "Negative Space: generous padding to signal luxury and ease."
+    ]
+  },
+  "typography": {
+    "primary_font": "Outfit",
+    "secondary_font": "Plus Jakarta Sans",
+    "h1": "text-5xl md:text-7xl font-bold tracking-tight leading-[1.1]",
+    "h2": "text-3xl md:text-5xl font-semibold tracking-tight",
+    "h3": "text-2xl md:text-3xl font-medium",
+    "body": "text-base md:text-lg leading-relaxed text-slate-600",
+    "caption": "text-sm font-medium tracking-wide uppercase text-slate-400",
+    "instructions": "Import fonts via Google Fonts in index.css. Use 'Outfit' for all Headings and 'Plus Jakarta Sans' for Body/UI."
+  },
+  "colors": {
+    "palette": {
+      "primary": "#4F46E5",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#F1F5F9",
+      "secondary_foreground": "#0F172A",
+      "accent": "#10B981",
+      "accent_foreground": "#FFFFFF",
+      "background": "#F8FAFC",
+      "foreground": "#1E293B",
+      "muted": "#F1F5F9",
+      "muted_foreground": "#64748B",
+      "border": "#E2E8F0",
+      "input": "#E2E8F0",
+      "ring": "#4F46E5"
+    },
+    "usage": {
+      "background": "bg-slate-50",
+      "surface": "bg-white",
+      "text_main": "text-slate-800",
+      "text_muted": "text-slate-500",
+      "action": "bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/30",
+      "success": "text-emerald-600 bg-emerald-50 border-emerald-200"
+    },
+    "gradients": {
+      "hero": "bg-gradient-to-br from-indigo-50 via-white to-emerald-50",
+      "card_hover": "hover:bg-gradient-to-br hover:from-white hover:to-slate-50"
+    }
+  },
+  "layout": {
+    "spacing": {
+      "container": "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8",
+      "section_padding": "py-20 md:py-32",
+      "element_gap": "gap-8 md:gap-12"
+    },
+    "grid_systems": {
+      "bento_hero": "grid grid-cols-1 md:grid-cols-12 gap-6",
+      "service_grid": "grid grid-cols-1 md:grid-cols-3 gap-8",
+      "dashboard_grid": "grid grid-cols-1 lg:grid-cols-4 gap-6"
+    },
+    "border_radius": {
+      "default": "rounded-2xl",
+      "button": "rounded-full",
+      "card": "rounded-3xl"
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "h-12 px-8 rounded-full bg-indigo-600 text-white font-medium transition-all hover:scale-105 hover:shadow-xl active:scale-95",
+      "secondary": "h-12 px-8 rounded-full bg-white border border-slate-200 text-slate-900 font-medium hover:bg-slate-50 hover:border-slate-300 transition-all",
+      "ghost": "h-10 px-4 rounded-full text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+    },
+    "cards": {
+      "service": "group relative overflow-hidden rounded-3xl bg-white border border-slate-100 p-8 transition-all hover:shadow-2xl hover:shadow-indigo-500/10 hover:-translate-y-1",
+      "booking": "rounded-3xl bg-white/80 backdrop-blur-xl border border-white/50 shadow-2xl shadow-slate-200/50 p-8"
+    },
+    "inputs": {
+      "default": "h-12 rounded-xl border-slate-200 bg-white/50 focus:bg-white focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+    }
+  },
+  "visual_enhancers": {
+    "glassmorphism": "bg-white/70 backdrop-blur-lg border border-white/20 shadow-lg",
+    "shadows": {
+      "soft": "shadow-[0_8px_30px_rgb(0,0,0,0.04)]",
+      "glow": "shadow-[0_0_50px_-12px_rgb(79,70,229,0.3)]"
+    },
+    "textures": "Use subtle noise overlays on solid backgrounds to prevent 'digital flatness'."
+  },
+  "images": {
+    "hero_bg": {
+      "url": "https://images.unsplash.com/photo-1677666939395-fbeb465f80d0?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Modern laundry room interior",
+      "usage": "Hero section background or split screen visual"
+    },
+    "service_wash_fold": {
+      "url": "https://images.unsplash.com/photo-1627564359646-5972788cec65?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Neatly folded colorful clothes",
+      "usage": "Service card for Wash & Fold"
+    },
+    "service_dry_clean": {
+      "url": "https://images.unsplash.com/photo-1617691120034-5bf8a1a31fbb?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Clothes hanging on rack",
+      "usage": "Service card for Dry Cleaning"
+    },
+    "freshness_feature": {
+      "url": "https://images.unsplash.com/photo-1745613830905-552dfc3a62ba?crop=entropy&cs=srgb&fm=jpg&q=85",
+      "alt": "Laundry drying in fresh air",
+      "usage": "Feature section about freshness guarantee"
+    }
+  },
+  "universal_guidelines": [
+    "Do not use generic 'Inter' font. Use 'Outfit' for headings.",
+    "Avoid full-screen solid gradients. Use mesh gradients or subtle tints.",
+    "Buttons must be pill-shaped (rounded-full) for a friendly, modern feel.",
+    "Use 2x more whitespace than you think is necessary.",
+    "All interactive elements must have a hover state that lifts or glows.",
+    "Use 'sonner' for all toast notifications.",
+    "Ensure all inputs have 'data-testid' attributes."
+  ],
+  "instructions_to_main_agent": [
+    "1. Install fonts 'Outfit' and 'Plus Jakarta Sans' in index.css immediately.",
+    "2. Configure tailwind.config.js with the custom colors and border radius.",
+    "3. Create the 'Bento' grid layout for the landing page hero.",
+    "4. Build the 'ServiceCard' component using the specified hover effects.",
+    "5. Implement the Booking Wizard using Shadcn Tabs or Stepper (customized).",
+    "6. Use the provided image URLs for the respective sections.",
+    "7. Ensure the 'Pin Code Checker' is the most prominent element on the Hero."
+  ]
+}
