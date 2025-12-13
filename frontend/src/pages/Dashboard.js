@@ -24,10 +24,10 @@ export const Dashboard = () => {
 
   const getStatusColor = (status) => {
     const colors = {
-      pending: 'bg-amber-50 text-amber-700 border-amber-200',
+      pending: 'bg-blue-50 text-blue-700 border-blue-200',
       confirmed: 'bg-blue-50 text-blue-700 border-blue-200',
-      processing: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      completed: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      processing: 'bg-blue-50 text-blue-700 border-blue-200',
+      completed: 'bg-green-50 text-green-700 border-green-200',
       cancelled: 'bg-red-50 text-red-700 border-red-200',
     };
     return colors[status] || colors.pending;
