@@ -20,8 +20,10 @@ export const Checkout = () => {
   const [formData, setFormData] = useState({
     pickup_date: '',
     pickup_time: '',
+    pickup_instruction: '',
     delivery_date: '',
     delivery_time: '',
+    delivery_instruction: '',
     address: '',
     pin_code: '',
     payment_method: 'cod',
