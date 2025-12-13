@@ -78,11 +78,11 @@ export const Checkout = () => {
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-2 mb-6">
                   <Calendar className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-xl font-semibold">Pickup Schedule</h2>
+                  <h2 className="text-xl font-semibold">Collection Date & Time</h2>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="pickup_date">Pickup Date</Label>
+                    <Label htmlFor="pickup_date">Collection Date *</Label>
                     <Input
                       id="pickup_date"
                       name="pickup_date"
@@ -95,17 +95,41 @@ export const Checkout = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="pickup_time">Pickup Time</Label>
-                    <Input
-                      id="pickup_time"
-                      name="pickup_time"
-                      type="time"
+                    <Label htmlFor="pickup_time">Collection Slot *</Label>
+                    <Select
                       value={formData.pickup_time}
-                      onChange={handleChange}
+                      onValueChange={(value) => setFormData({ ...formData, pickup_time: value })}
                       required
-                      className="h-12 rounded-xl mt-2"
-                      data-testid="pickup-time-input"
-                    />
+                    >
+                      <SelectTrigger className="h-12 rounded-xl mt-2" data-testid="pickup-slot-select">
+                        <SelectValue placeholder="- Select Slot -" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="08:00-10:00">8:00 AM - 10:00 AM</SelectItem>
+                        <SelectItem value="10:00-12:00">10:00 AM - 12:00 PM</SelectItem>
+                        <SelectItem value="12:00-14:00">12:00 PM - 2:00 PM</SelectItem>
+                        <SelectItem value="14:00-16:00">2:00 PM - 4:00 PM</SelectItem>
+                        <SelectItem value="16:00-18:00">4:00 PM - 6:00 PM</SelectItem>
+                        <SelectItem value="18:00-20:00">6:00 PM - 8:00 PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="pickup_instruction">Collection Instruction *</Label>
+                    <Select
+                      value={formData.pickup_instruction || ''}
+                      onValueChange={(value) => setFormData({ ...formData, pickup_instruction: value })}
+                      required
+                    >
+                      <SelectTrigger className="h-12 rounded-xl mt-2" data-testid="pickup-instruction-select">
+                        <SelectValue placeholder="— How should driver collect? —" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in-person">Driver collects from you (in person)</SelectItem>
+                        <SelectItem value="doorstep">Leave outside (doorstep/mailbox)</SelectItem>
+                        <SelectItem value="reception">Leave at reception/porter</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
@@ -113,11 +137,11 @@ export const Checkout = () => {
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-2 mb-6">
                   <Clock className="h-5 w-5 text-blue-600" />
-                  <h2 className="text-xl font-semibold">Delivery Schedule</h2>
+                  <h2 className="text-xl font-semibold">Delivery Date & Time</h2>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-4">
                   <div>
-                    <Label htmlFor="delivery_date">Delivery Date</Label>
+                    <Label htmlFor="delivery_date">Delivery Date *</Label>
                     <Input
                       id="delivery_date"
                       name="delivery_date"
@@ -130,17 +154,41 @@ export const Checkout = () => {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="delivery_time">Delivery Time</Label>
-                    <Input
-                      id="delivery_time"
-                      name="delivery_time"
-                      type="time"
+                    <Label htmlFor="delivery_time">Delivery Slot *</Label>
+                    <Select
                       value={formData.delivery_time}
-                      onChange={handleChange}
+                      onValueChange={(value) => setFormData({ ...formData, delivery_time: value })}
                       required
-                      className="h-12 rounded-xl mt-2"
-                      data-testid="delivery-time-input"
-                    />
+                    >
+                      <SelectTrigger className="h-12 rounded-xl mt-2" data-testid="delivery-slot-select">
+                        <SelectValue placeholder="- Select Slot -" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="08:00-10:00">8:00 AM - 10:00 AM</SelectItem>
+                        <SelectItem value="10:00-12:00">10:00 AM - 12:00 PM</SelectItem>
+                        <SelectItem value="12:00-14:00">12:00 PM - 2:00 PM</SelectItem>
+                        <SelectItem value="14:00-16:00">2:00 PM - 4:00 PM</SelectItem>
+                        <SelectItem value="16:00-18:00">4:00 PM - 6:00 PM</SelectItem>
+                        <SelectItem value="18:00-20:00">6:00 PM - 8:00 PM</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="delivery_instruction">Delivery Instruction *</Label>
+                    <Select
+                      value={formData.delivery_instruction || ''}
+                      onValueChange={(value) => setFormData({ ...formData, delivery_instruction: value })}
+                      required
+                    >
+                      <SelectTrigger className="h-12 rounded-xl mt-2" data-testid="delivery-instruction-select">
+                        <SelectValue placeholder="— How should driver deliver? —" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ring-wait">Ring bell and wait</SelectItem>
+                        <SelectItem value="ring-leave">Ring bell and leave</SelectItem>
+                        <SelectItem value="reception">Leave at reception/porter</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
               </div>
