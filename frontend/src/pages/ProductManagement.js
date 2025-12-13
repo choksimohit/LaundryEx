@@ -390,7 +390,7 @@ export const ProductManagement = () => {
 
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">
+                        <div className="text-2xl font-bold text-green-600">
                           £{product.price.toFixed(2)}
                         </div>
                       </div>
