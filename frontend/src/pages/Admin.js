@@ -99,7 +99,7 @@ export const Admin = () => {
             </div>
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Total Revenue</p>
-              <p className="text-3xl font-bold text-emerald-600" data-testid="stat-total-revenue">£{stats.total_revenue.toFixed(2)}</p>
+              <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-revenue">£{stats.total_revenue.toFixed(2)}</p>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Businesses</p>
