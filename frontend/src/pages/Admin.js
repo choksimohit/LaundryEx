@@ -76,28 +76,6 @@ export const Admin = () => {
     }
   };
 
-  const handleCreateService = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/admin/services', {
-        ...serviceForm,
-        base_price: parseFloat(serviceForm.base_price),
-      });
-      toast.success('Service created successfully');
-      setServiceForm({
-        business_id: '',
-        name: '',
-        category: '',
-        base_price: '',
-        description: '',
-        image_url: '',
-      });
-      loadStats();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create service');
-    }
-  };
-
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus });
