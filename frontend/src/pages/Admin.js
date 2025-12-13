@@ -154,7 +154,7 @@ export const Admin = () => {
           <TabsContent value="businesses" className="space-y-6" data-testid="businesses-tab-content">
             {(user?.role === 'platform_admin' || user?.role === 'super_admin') && (
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
-                <h2 className="text-xl font-semibold mb-6">Create New Business</h2>
+                <h2 className="text-xl font-semibold mb-6 text-blue-600">Create New Business</h2>
                 <form onSubmit={handleCreateBusiness} className="space-y-4">
                   <div>
                     <Label htmlFor="business_name">Business Name</Label>
