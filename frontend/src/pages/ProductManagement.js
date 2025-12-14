@@ -355,14 +355,14 @@ export const ProductManagement = () => {
               <div>
                 <Label htmlFor="subcategory">Subcategory (Optional)</Label>
                 <Select
-                  value={formData.subcategory || ''}
-                  onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
+                  value={formData.subcategory || 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, subcategory: value === 'none' ? '' : value })}
                 >
                   <SelectTrigger className="mt-2" data-testid="subcategory-select">
                     <SelectValue placeholder="Select subcategory (optional)" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {subcategories.map(subcat => (
                       <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
                     ))}
