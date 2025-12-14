@@ -53,7 +53,7 @@ export const Products = () => {
         sessionStorage.setItem('pinCode', pinCode.toUpperCase());
         sessionStorage.setItem('businesses', JSON.stringify(response.data.businesses));
         setHasValidPinCode(true);
-        loadServiceTypes();
+        loadCategories();
       } else {
         toast.error('Service not available in your area yet');
         setHasValidPinCode(false);
