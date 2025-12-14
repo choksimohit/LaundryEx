@@ -158,7 +158,7 @@ export const Products = () => {
         {!hasValidPinCode ? (
           <div className="bg-white rounded-2xl p-8 shadow-lg mb-8 max-w-2xl mx-auto" data-testid="pincode-checker-section">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold mb-2">Check Service Availability</h2>
+              <h2 className="text-2xl font-bold mb-2 text-slate-800">Check Service Availability</h2>
               <p className="text-slate-600">Enter your postcode to see available services in your area</p>
             </div>
             <div className="flex gap-3 max-w-md mx-auto">
@@ -243,7 +243,7 @@ export const Products = () => {
                       {categoryProducts.map(product => (
                         <div
                           key={product.id}
-                          className="flex items-center justify-between p-6 border-b last:border-b-0 hover:bg-slate-50"
+                          className="flex items-center justify-between p-6 border-b border-slate-200 last:border-b-0 hover:bg-slate-50"
                           data-testid={`product-${product.id}`}
                         >
                           <div className="flex items-center gap-4 flex-1">
