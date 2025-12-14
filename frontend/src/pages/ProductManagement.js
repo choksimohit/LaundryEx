@@ -36,6 +36,95 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Sortable Product Item Component
+const SortableProductItem = ({ product, onEdit, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: product.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="p-6 hover:bg-slate-50 transition-colors border-b border-slate-200 last:border-b-0"
+      data-testid={`product-row-${product.id}`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 flex-1">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing touch-none"
+          >
+            <GripVertical className="h-5 w-5 text-slate-400" />
+          </div>
+
+          {product.icon_url ? (
+            <img
+              src={product.icon_url}
+              alt={product.name}
+              className="w-16 h-16 object-cover rounded-lg"
+            />
+          ) : (
+            <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
+              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+          )}
+
+          <div className="flex-1">
+            <h4 className="font-medium text-lg text-slate-800">{product.name}</h4>
+            {product.subcategory && (
+              <p className="text-sm text-slate-500">{product.subcategory}</p>
+            )}
+            <p className="text-xs text-slate-400 mt-1">{product.business_name}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-600">
+              £{product.price.toFixed(2)}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => onEdit(product)}
+              data-testid={`edit-product-${product.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => onDelete(product.id)}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              data-testid={`delete-product-${product.id}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [businesses, setBusinesses] = useState([]);
@@ -56,6 +145,13 @@ export const ProductManagement = () => {
     price: '',
     icon_url: '',
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   useEffect(() => {
     loadData();
