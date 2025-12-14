@@ -213,7 +213,7 @@ export const Products = () => {
                   key={type.name}
                   onClick={() => setSelectedServiceType(type.name)}
                   variant={selectedServiceType === type.name ? "default" : "outline"}
-                  className={selectedServiceType === type.name ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+                  className={selectedServiceType === type.name ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : "border-slate-300 hover:bg-slate-50"}
                   data-testid={`service-type-${type.name}`}
                 >
                   {type.name}
