@@ -436,6 +436,22 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
         "total_products": total_products
     }
 
+@api_router.post("/admin/products/reorder")
+async def reorder_products(data: dict, admin: dict = Depends(get_admin_user)):
+    updates = data.get("updates", [])
+    
+    for update in updates:
+        product_id = update.get("id")
+        sort_order = update.get("sort_order")
+        
+        if product_id and sort_order is not None:
+            await db.products.update_one(
+                {"id": product_id},
+                {"$set": {"sort_order": sort_order}}
+            )
+    
+    return {"status": "success", "updated": len(updates)}
+
 app.include_router(api_router)
 
 app.add_middleware(
