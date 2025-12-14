@@ -216,16 +216,16 @@ async def check_pincode(data: PinCodeCheck):
     }
 
 @api_router.get("/products")
-async def get_products(business_id: Optional[str] = None, service_type: Optional[str] = None, category: Optional[str] = None):
+async def get_products(business_id: Optional[str] = None, category: Optional[str] = None, subcategory: Optional[str] = None):
     query = {}
     if business_id:
         query["business_id"] = business_id
-    if service_type:
-        query["service_type"] = service_type
     if category:
         query["category"] = category
+    if subcategory:
+        query["subcategory"] = subcategory
     
-    products = await db.products.find(query, {"_id": 0}).sort([("category_sort_order", 1), ("subcategory_sort_order", 1), ("sort_order", 1), ("name", 1)]).to_list(1000)
+    products = await db.products.find(query, {"_id": 0}).sort([("sort_order", 1), ("name", 1)]).to_list(1000)
     return products
 
 @api_router.get("/service-types")
@@ -238,14 +238,10 @@ async def get_service_types():
     return service_types
 
 @api_router.get("/categories")
-async def get_categories(service_type: Optional[str] = None):
-    query = {}
-    if service_type:
-        query["service_type"] = service_type
-    
+async def get_categories():
     pipeline = [
-        {"$match": query},
         {"$group": {"_id": "$category"}},
+        {"$sort": {"_id": 1}},
         {"$project": {"_id": 0, "name": "$_id"}}
     ]
     categories = await db.products.aggregate(pipeline).to_list(100)
