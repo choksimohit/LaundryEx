@@ -244,6 +244,39 @@ export const ProductManagement = () => {
     setEditingProduct(null);
   };
 
+  const handleDragEnd = async (event, groupKey) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const groupProducts = groupedProducts[groupKey];
+    const oldIndex = groupProducts.findIndex(p => p.id === active.id);
+    const newIndex = groupProducts.findIndex(p => p.id === over.id);
+
+    const reorderedProducts = arrayMove(groupProducts, oldIndex, newIndex);
+
+    // Update local state immediately for smooth UX
+    const updatedGrouped = { ...groupedProducts, [groupKey]: reorderedProducts };
+    const allUpdatedProducts = Object.values(updatedGrouped).flat();
+    setProducts(allUpdatedProducts);
+
+    // Prepare updates with new sort_order
+    const updates = reorderedProducts.map((product, index) => ({
+      id: product.id,
+      sort_order: index,
+    }));
+
+    try {
+      await api.post('/admin/products/reorder', { updates });
+      toast.success('Product order updated');
+    } catch (error) {
+      toast.error('Failed to update product order');
+      loadData(); // Reload on error
+    }
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchTerm.toLowerCase());
@@ -254,7 +287,7 @@ export const ProductManagement = () => {
   });
 
   const groupedProducts = filteredProducts.reduce((acc, product) => {
-    const key = `${product.service_type} > ${product.category}`;
+    const key = `${product.service_type} > ${product.category} ${product.subcategory ? `> ${product.subcategory}` : ''}`;
     if (!acc[key]) {
       acc[key] = [];
     }
