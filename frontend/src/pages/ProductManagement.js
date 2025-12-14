@@ -128,17 +128,17 @@ const SortableProductItem = ({ product, onEdit, onDelete }) => {
 export const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [businesses, setBusinesses] = useState([]);
-  const [serviceTypes, setServiceTypes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterServiceType, setFilterServiceType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterSubcategory, setFilterSubcategory] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
   const [formData, setFormData] = useState({
     business_id: '',
-    service_type: '',
+    service_type: 'Laundry Service',
     category: '',
     subcategory: '',
     name: '',
@@ -159,19 +159,19 @@ export const ProductManagement = () => {
 
   const loadData = async () => {
     try {
-      const [productsRes, businessesRes, serviceTypesRes] = await Promise.all([
+      const [productsRes, businessesRes] = await Promise.all([
         api.get('/admin/products'),
         api.get('/admin/businesses'),
-        api.get('/service-types'),
       ]);
       
       setProducts(productsRes.data);
       setBusinesses(businessesRes.data);
-      setServiceTypes(serviceTypesRes.data);
       
-      // Extract unique categories
-      const uniqueCategories = [...new Set(productsRes.data.map(p => p.category))];
+      // Extract unique categories and subcategories
+      const uniqueCategories = [...new Set(productsRes.data.map(p => p.category))].filter(Boolean);
+      const uniqueSubcategories = [...new Set(productsRes.data.map(p => p.subcategory))].filter(Boolean);
       setCategories(uniqueCategories);
+      setSubcategories(uniqueSubcategories);
     } catch (error) {
       toast.error('Failed to load data');
     }
@@ -207,7 +207,7 @@ export const ProductManagement = () => {
     setEditingProduct(product);
     setFormData({
       business_id: product.business_id,
-      service_type: product.service_type,
+      service_type: product.service_type || 'Laundry Service',
       category: product.category,
       subcategory: product.subcategory || '',
       name: product.name,
@@ -234,7 +234,7 @@ export const ProductManagement = () => {
   const resetForm = () => {
     setFormData({
       business_id: '',
-      service_type: '',
+      service_type: 'Laundry Service',
       category: '',
       subcategory: '',
       name: '',
@@ -280,14 +280,14 @@ export const ProductManagement = () => {
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesServiceType = filterServiceType === 'all' || product.service_type === filterServiceType;
     const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+    const matchesSubcategory = filterSubcategory === 'all' || product.subcategory === filterSubcategory;
     
-    return matchesSearch && matchesServiceType && matchesCategory;
+    return matchesSearch && matchesCategory && matchesSubcategory;
   });
 
   const groupedProducts = filteredProducts.reduce((acc, product) => {
-    const key = `${product.service_type} > ${product.category} ${product.subcategory ? `> ${product.subcategory}` : ''}`;
+    const key = `${product.category} ${product.subcategory ? `> ${product.subcategory}` : ''}`;
     if (!acc[key]) {
       acc[key] = [];
     }
