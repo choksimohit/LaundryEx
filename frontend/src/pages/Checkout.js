@@ -37,9 +37,25 @@ export const Checkout = () => {
       setCart(JSON.parse(savedCart));
     }
     const savedPinCode = sessionStorage.getItem('pinCode');
-    if (savedPinCode) {
-      setFormData(prev => ({ ...prev, pin_code: savedPinCode }));
-    }
+    
+    // Set default dates
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    
+    const deliveryDate = new Date(today);
+    deliveryDate.setDate(deliveryDate.getDate() + 2);
+    const deliveryStr = deliveryDate.toISOString().split('T')[0];
+    
+    setFormData(prev => ({ 
+      ...prev, 
+      pin_code: savedPinCode || '',
+      pickup_date: todayStr,
+      pickup_time: '10:00-12:00',
+      pickup_instruction: 'in-person',
+      delivery_date: deliveryStr,
+      delivery_time: '14:00-16:00',
+      delivery_instruction: 'ring-wait'
+    }));
   }, []);
 
   const handleChange = (e) => {
