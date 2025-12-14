@@ -187,7 +187,7 @@ export const Products = () => {
             {/* Header with postcode info */}
             <div className="flex justify-between items-center mb-8">
               <div>
-                <h1 className="text-3xl font-bold">Order Products</h1>
+                <h1 className="text-3xl font-bold text-slate-800">Order Products</h1>
                 <p className="text-slate-600 mt-1">
                   Service area: <span className="font-semibold text-blue-600">{pinCode}</span>
                   <button
