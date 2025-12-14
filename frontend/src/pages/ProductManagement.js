@@ -492,78 +492,36 @@ export const ProductManagement = () => {
         </div>
       </div>
 
-      {/* Products List */}
+      {/* Products List with Drag and Drop */}
       <div className="space-y-6">
         {Object.entries(groupedProducts).map(([groupKey, groupProducts]) => (
           <div key={groupKey} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
               <h3 className="font-semibold text-lg text-blue-600">{groupKey}</h3>
-              <p className="text-sm text-slate-600">{groupProducts.length} product(s)</p>
+              <p className="text-sm text-slate-600">{groupProducts.length} product(s) - Drag to reorder within this group</p>
             </div>
-            
-            <div className="divide-y divide-slate-200">
-              {groupProducts.map(product => (
-                <div
-                  key={product.id}
-                  className="p-6 hover:bg-slate-50 transition-colors"
-                  data-testid={`product-row-${product.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      {product.icon_url ? (
-                        <img
-                          src={product.icon_url}
-                          alt={product.name}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                          <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                          </svg>
-                        </div>
-                      )}
-                      
-                      <div className="flex-1">
-                        <h4 className="font-medium text-lg text-slate-800">{product.name}</h4>
-                        {product.subcategory && (
-                          <p className="text-sm text-slate-500">{product.subcategory}</p>
-                        )}
-                        <p className="text-xs text-slate-400 mt-1">{product.business_name}</p>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">
-                          £{product.price.toFixed(2)}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleEdit(product)}
-                          data-testid={`edit-product-${product.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          data-testid={`delete-product-${product.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => handleDragEnd(event, groupKey)}
+            >
+              <SortableContext
+                items={groupProducts.map(p => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div>
+                  {groupProducts.map(product => (
+                    <SortableProductItem
+                      key={product.id}
+                      product={product}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         ))}
 
