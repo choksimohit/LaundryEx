@@ -45,9 +45,9 @@ export const Landing = () => {
         }}
       />
       
-      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 md:py-32">
         <div className="max-w-3xl">
-          <h1 className="text-5xl md:text-6xl font-bold tracking-tight leading-tight mb-6 text-white" data-testid="hero-title">
+          <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-4 md:mb-6 text-white" data-testid="hero-title">
             Premium Laundry &
             <br />
             Dry Cleaning in
@@ -55,8 +55,8 @@ export const Landing = () => {
             Colchester
           </h1>
 
-          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-6 shadow-2xl mt-8 max-w-md" data-testid="pincode-checker">
-            <h3 className="text-lg font-semibold mb-2 text-white">Add your Postcode</h3>
+          <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 sm:p-6 shadow-2xl mt-6 md:mt-8 max-w-md" data-testid="pincode-checker">
+            <h3 className="text-base sm:text-lg font-semibold mb-2 text-white">Add your Postcode</h3>
             <p className="text-xs text-white/80 mb-3">Please add postcode (eg: CO27FQ)</p>
             <div className="flex gap-2">
               <Input
@@ -65,13 +65,13 @@ export const Landing = () => {
                 value={pinCode}
                 onChange={(e) => setPinCode(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && checkAvailability()}
-                className="h-10 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/60 focus:bg-white/30 focus:border-white/50"
+                className="h-10 sm:h-12 bg-white/20 backdrop-blur-sm border-white/30 text-white placeholder:text-white/60 focus:bg-white/30 focus:border-white/50 text-sm sm:text-base"
                 data-testid="pincode-input"
               />
               <Button
                 onClick={checkAvailability}
                 disabled={loading}
-                className="h-10 px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium whitespace-nowrap"
+                className="h-10 sm:h-12 px-4 sm:px-6 bg-blue-600 hover:bg-blue-700 text-white font-medium whitespace-nowrap text-sm sm:text-base"
                 data-testid="check-availability-button"
               >
                 Check
