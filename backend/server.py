@@ -68,6 +68,9 @@ class Product(BaseModel):
     name: str
     price: float
     icon_url: Optional[str] = None
+    sort_order: Optional[int] = None
+    category_sort_order: Optional[int] = None
+    subcategory_sort_order: Optional[int] = None
 
 class CartItem(BaseModel):
     product_id: str
@@ -130,6 +133,7 @@ class ProductCreate(BaseModel):
     name: str
     price: float
     icon_url: Optional[str] = None
+    sort_order: Optional[int] = None
 
 class OrderStatusUpdate(BaseModel):
     status: str
@@ -221,7 +225,7 @@ async def get_products(business_id: Optional[str] = None, service_type: Optional
     if category:
         query["category"] = category
     
-    products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    products = await db.products.find(query, {"_id": 0}).sort([("category_sort_order", 1), ("subcategory_sort_order", 1), ("sort_order", 1), ("name", 1)]).to_list(1000)
     return products
 
 @api_router.get("/service-types")
@@ -347,6 +351,13 @@ async def create_product(product_data: ProductCreate, admin: dict = Depends(get_
         raise HTTPException(status_code=404, detail="Business not found")
     
     product_id = str(uuid.uuid4())
+    
+    # Get max sort_order for this subcategory if not provided
+    if product_data.sort_order is None:
+        subcategory_filter = {"category": product_data.category, "subcategory": product_data.subcategory}
+        max_product = await db.products.find(subcategory_filter, {"_id": 0}).sort("sort_order", -1).limit(1).to_list(1)
+        product_data.sort_order = (max_product[0].get("sort_order", 0) + 1) if max_product else 0
+    
     product_doc = {
         "id": product_id,
         "business_id": product_data.business_id,
@@ -357,6 +368,7 @@ async def create_product(product_data: ProductCreate, admin: dict = Depends(get_
         "name": product_data.name,
         "price": product_data.price,
         "icon_url": product_data.icon_url,
+        "sort_order": product_data.sort_order,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.products.insert_one(product_doc)
@@ -378,6 +390,9 @@ async def update_product(product_id: str, product_data: ProductCreate, admin: di
         "price": product_data.price,
         "icon_url": product_data.icon_url,
     }
+    
+    if product_data.sort_order is not None:
+        update_doc["sort_order"] = product_data.sort_order
     
     result = await db.products.update_one(
         {"id": product_id},
