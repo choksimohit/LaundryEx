@@ -93,7 +93,7 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
               {user ? (
                 <>
                   <button onClick={handleCartClick} className="relative" data-testid="cart-link">
-                    <Button className="rounded-md bg-blue-600 hover:bg-blue-700">
+                    <Button className="rounded-md bg-blue-600 hover:bg-blue-700 text-white">
                       <ShoppingCart className="h-5 w-5 mr-2" />
                       Cart
                       {cartItemsCount > 0 && (
@@ -113,7 +113,7 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
                     <Button variant="ghost">Login</Button>
                   </Link>
                   <button onClick={handleCartClick} className="relative" data-testid="cart-button">
-                    <Button className="rounded-md bg-blue-600 hover:bg-blue-700">
+                    <Button className="rounded-md bg-blue-600 hover:bg-blue-700 text-white">
                       <ShoppingCart className="h-5 w-5" />
                       {cartItemsCount > 0 && (
                         <span className="absolute -top-1 -right-1 bg-white text-blue-600 rounded-full px-1.5 py-0.5 text-xs font-bold" data-testid="cart-count">
@@ -200,7 +200,7 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
                     </Button>
                   ) : (
                     <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full bg-blue-600 hover:bg-blue-700">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                         Login
                       </Button>
                     </Link>
