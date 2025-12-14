@@ -42,8 +42,8 @@ export const Register = () => {
       <div className="w-full max-w-md">
         <div className="bg-white/80 backdrop-blur-lg border border-white/20 shadow-2xl shadow-slate-200/50 rounded-3xl p-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-semibold mb-2">Create Account</h2>
-            <p className="text-slate-600">Join FreshFold today</p>
+            <h2 className="text-3xl font-semibold mb-2 text-slate-800">Create Account</h2>
+            <p className="text-slate-600">Join Laundry Express today</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
