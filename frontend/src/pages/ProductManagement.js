@@ -304,7 +304,7 @@ export const ProductManagement = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="add-product-button">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="add-product-button">
               <Plus className="h-4 w-4 mr-2" />
               Add Product
             </Button>
@@ -335,41 +335,39 @@ export const ProductManagement = () => {
               </div>
 
               <div>
-                <Label htmlFor="service_type">Service Type *</Label>
-                <Input
-                  id="service_type"
-                  value={formData.service_type}
-                  onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
-                  placeholder="e.g., Dry Cleaning, Laundry"
-                  required
-                  className="mt-2"
-                  data-testid="service-type-input"
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="category">Category *</Label>
-                <Input
-                  id="category"
+                <Select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Accessories, Bottoms, Tops"
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
                   required
-                  className="mt-2"
-                  data-testid="category-input"
-                />
+                >
+                  <SelectTrigger className="mt-2" data-testid="category-select">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <Label htmlFor="subcategory">Subcategory (Optional)</Label>
-                <Input
-                  id="subcategory"
-                  value={formData.subcategory}
-                  onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                  placeholder="e.g., Delicate, Pleat"
-                  className="mt-2"
-                  data-testid="subcategory-input"
-                />
+                <Select
+                  value={formData.subcategory || ''}
+                  onValueChange={(value) => setFormData({ ...formData, subcategory: value })}
+                >
+                  <SelectTrigger className="mt-2" data-testid="subcategory-select">
+                    <SelectValue placeholder="Select subcategory (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None</SelectItem>
+                    {subcategories.map(subcat => (
+                      <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -432,7 +430,7 @@ export const ProductManagement = () => {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                   data-testid="submit-product-button"
                 >
                   {editingProduct ? 'Update Product' : 'Create Product'}
@@ -461,21 +459,6 @@ export const ProductManagement = () => {
           </div>
           
           <div>
-            <Label>Filter by Service Type</Label>
-            <Select value={filterServiceType} onValueChange={setFilterServiceType}>
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Service Types</SelectItem>
-                {serviceTypes.map(type => (
-                  <SelectItem key={type.name} value={type.name}>{type.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
             <Label>Filter by Category</Label>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="mt-2">
@@ -485,6 +468,21 @@ export const ProductManagement = () => {
                 <SelectItem value="all">All Categories</SelectItem>
                 {categories.map(cat => (
                   <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label>Filter by Subcategory</Label>
+            <Select value={filterSubcategory} onValueChange={setFilterSubcategory}>
+              <SelectTrigger className="mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subcategories</SelectItem>
+                {subcategories.map(subcat => (
+                  <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
