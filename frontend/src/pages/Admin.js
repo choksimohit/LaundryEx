@@ -124,7 +124,7 @@ export const Admin = () => {
               <div key={order.id} className="bg-white rounded-2xl p-6 border border-slate-200" data-testid={`admin-order-${order.id}`}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-semibold mb-2">Order #{order.id.slice(0, 8)}</h3>
+                    <h3 className="text-xl font-semibold mb-2">Order #{order.order_number || order.id.slice(0, 8)}</h3>
                     <p className="text-sm text-slate-600">Customer: {order.user_name}</p>
                     <p className="text-sm text-slate-600">Email: {order.user_email}</p>
                   </div>
@@ -145,6 +145,28 @@ export const Admin = () => {
                         <SelectItem value="cancelled">Cancelled</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+                
+                <div className="border-t border-slate-200 pt-4 mb-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Order Items:</h4>
+                  <div className="space-y-1">
+                    {order.items.map((item, index) => (
+                      <div key={index} className="text-sm text-slate-600">
+                        • {item.product_name} × {item.quantity} - £{(item.price * item.quantity).toFixed(2)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <span className="text-slate-600 block">Pickup:</span>
+                    <span className="font-medium">{order.pickup_date} at {order.pickup_time}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-600 block">Delivery:</span>
+                    <span className="font-medium">{order.delivery_date} at {order.delivery_time}</span>
                   </div>
                 </div>
               </div>
