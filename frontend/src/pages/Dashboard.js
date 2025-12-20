@@ -61,7 +61,7 @@ export const Dashboard = () => {
               >
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <h3 className="text-xl font-semibold mb-2" data-testid={`order-id-${order.id}`}>Order #{order.id.slice(0, 8)}</h3>
+                    <h3 className="text-xl font-semibold mb-2" data-testid={`order-id-${order.id}`}>Order #{order.order_number || order.id.slice(0, 8)}</h3>
                     <p className="text-sm text-slate-600">
                       {new Date(order.created_at).toLocaleDateString('en-GB', {
                         day: 'numeric',
@@ -95,9 +95,20 @@ export const Dashboard = () => {
                   </div>
                 </div>
 
+                <div className="border-t border-slate-200 pt-4 mb-4">
+                  <h4 className="text-sm font-medium text-slate-700 mb-2">Order Items:</h4>
+                  <div className="space-y-1">
+                    {order.items.map((item, index) => (
+                      <div key={index} className="text-sm text-slate-600">
+                        • {item.product_name} × {item.quantity} - £{(item.price * item.quantity).toFixed(2)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="border-t border-slate-200 pt-4">
                   <div className="flex justify-between items-center">
-                    <span className="text-slate-600">{order.items.length} item(s)</span>
+                    <span className="text-slate-600">Total</span>
                     <span className="text-xl font-bold text-blue-600" data-testid={`order-amount-${order.id}`}>
                       £{order.total_amount.toFixed(2)}
                     </span>
