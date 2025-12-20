@@ -253,8 +253,14 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
         raise HTTPException(status_code=400, detail="Minimum order value is £30")
     
     order_id = str(uuid.uuid4())
+    
+    # Generate 6-digit numeric order number
+    last_order = await db.orders.find({}, {"_id": 0, "order_number": 1}).sort("order_number", -1).limit(1).to_list(1)
+    order_number = (last_order[0]["order_number"] + 1) if last_order and "order_number" in last_order[0] else 100000
+    
     order_doc = {
         "id": order_id,
+        "order_number": order_number,
         "user_id": current_user["id"],
         "user_name": current_user["name"],
         "user_email": current_user["email"],
@@ -275,7 +281,7 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
     }
     await db.orders.insert_one(order_doc)
     
-    return {"order_id": order_id, "status": "success"}
+    return {"order_id": order_id, "order_number": order_number, "status": "success"}
 
 @api_router.post("/payment/create-intent")
 async def create_payment_intent(data: dict, current_user: dict = Depends(get_current_user)):
