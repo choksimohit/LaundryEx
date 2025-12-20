@@ -79,7 +79,8 @@ export const Products = () => {
 
   const loadProducts = async () => {
     try {
-      const response = await api.get(`/products?category=${selectedCategory}`);
+      const response = await api.get(`/products?category=${encodeURIComponent(selectedCategory)}`);
+      console.log(`Loaded ${response.data.length} products for category: ${selectedCategory}`);
       setProducts(response.data);
       if (response.data.length > 0) {
         const firstSubcategory = response.data[0].subcategory;
@@ -88,6 +89,7 @@ export const Products = () => {
         }
       }
     } catch (error) {
+      console.error('Failed to load products:', error);
       toast.error('Failed to load products');
     }
   };
