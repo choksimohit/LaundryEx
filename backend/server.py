@@ -325,12 +325,28 @@ async def get_order(order_id: str, current_user: dict = Depends(get_current_user
 
 @api_router.patch("/admin/orders/{order_id}/status")
 async def update_order_status(order_id: str, data: OrderStatusUpdate, admin: dict = Depends(get_admin_user)):
+    # Get the order first to send email
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
     result = await db.orders.update_one(
         {"id": order_id},
         {"$set": {"status": data.status}}
     )
+    
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Update order dict with new status for email
+    order["status"] = data.status
+    
+    # Send status update email to customer
+    try:
+        await send_status_update_email(order, data.status, order["user_email"])
+    except Exception as e:
+        print(f"Failed to send status update email: {e}")
+    
     return {"status": "success"}
 
 @api_router.get("/admin/businesses")
