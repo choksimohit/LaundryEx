@@ -265,13 +265,13 @@ export const Checkout = () => {
                   data-testid="payment-method-group"
                 >
                   <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl hover:bg-slate-50">
-                    <RadioGroupItem value="cod" id="cod" data-testid="payment-cod" />
+                    <RadioGroupItem value="cod" id="cod" data-testid="payment-method-cod" />
                     <Label htmlFor="cod" className="flex-1 cursor-pointer">
                       Cash on Delivery
                     </Label>
                   </div>
                   <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl hover:bg-slate-50">
-                    <RadioGroupItem value="stripe" id="stripe" data-testid="payment-stripe" />
+                    <RadioGroupItem value="stripe" id="stripe" data-testid="payment-method-stripe" />
                     <Label htmlFor="stripe" className="flex-1 cursor-pointer">
                       Credit/Debit Card (Stripe)
                     </Label>
