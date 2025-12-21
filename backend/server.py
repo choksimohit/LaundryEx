@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import stripe
+from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
