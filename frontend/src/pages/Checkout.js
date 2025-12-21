@@ -295,9 +295,9 @@ export const Checkout = () => {
               <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
               <div className="space-y-4 mb-6">
                 {cart.map(item => (
-                  <div key={item.service_id} className="flex justify-between text-sm" data-testid={`summary-item-${item.service_id}`}>
+                  <div key={item.product_id} className="flex justify-between text-sm" data-testid={`summary-item-${item.product_id}`}>
                     <span className="text-slate-600">
-                      {item.service_name} x {item.quantity}
+                      {item.product_name} × {item.quantity}
                     </span>
                     <span className="font-medium">£{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
