@@ -282,6 +282,18 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
     }
     await db.orders.insert_one(order_doc)
     
+    # Send confirmation email to customer
+    try:
+        await send_order_confirmation_email(order_doc, current_user["email"])
+    except Exception as e:
+        print(f"Failed to send customer confirmation email: {e}")
+    
+    # Send notification email to admin
+    try:
+        await send_admin_order_notification(order_doc)
+    except Exception as e:
+        print(f"Failed to send admin notification email: {e}")
+    
     return {"order_id": order_id, "order_number": order_number, "status": "success"}
 
 @api_router.post("/payment/create-intent")
