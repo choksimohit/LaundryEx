@@ -264,16 +264,18 @@ export const Checkout = () => {
                   onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
                   data-testid="payment-method-group"
                 >
-                  <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl hover:bg-slate-50">
+                  <div className="flex items-center space-x-2 p-4 border-2 border-blue-500 rounded-xl bg-blue-50">
                     <RadioGroupItem value="cod" id="cod" data-testid="payment-method-cod" />
                     <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                      Cash on Delivery
+                      <div className="font-semibold text-slate-800">Cash on Delivery</div>
+                      <div className="text-sm text-slate-600 mt-1">Pay when your order is delivered</div>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl hover:bg-slate-50">
-                    <RadioGroupItem value="stripe" id="stripe" data-testid="payment-method-stripe" />
-                    <Label htmlFor="stripe" className="flex-1 cursor-pointer">
-                      Credit/Debit Card (Stripe)
+                  <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl bg-slate-50 opacity-60">
+                    <RadioGroupItem value="stripe" id="stripe" disabled data-testid="payment-method-stripe" />
+                    <Label htmlFor="stripe" className="flex-1">
+                      <div className="font-semibold text-slate-500">Credit/Debit Card (Stripe)</div>
+                      <div className="text-sm text-slate-400 mt-1">Coming soon - Currently unavailable</div>
                     </Label>
                   </div>
                 </RadioGroup>
@@ -282,7 +284,7 @@ export const Checkout = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all"
+                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all disabled:opacity-50"
                 data-testid="place-order-button"
               >
                 {loading ? 'Placing Order...' : `Place Order - £${totalAmount.toFixed(2)}`}
