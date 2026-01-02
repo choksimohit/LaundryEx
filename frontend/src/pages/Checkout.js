@@ -12,8 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../utils/api';
 import { toast } from 'sonner';
+
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
 export const Checkout = () => {
   const [cart, setCart] = useState([]);
