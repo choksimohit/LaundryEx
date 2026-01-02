@@ -81,11 +81,50 @@ const CheckoutForm = () => {
         total_amount: totalAmount,
       };
 
-      const response = await api.post('/orders', orderData);
-      
-      toast.success('Order placed successfully!');
-      localStorage.removeItem('cart');
-      navigate(`/order-confirmation/${response.data.order_id}`);
+      // Handle Stripe payment
+      if (formData.payment_method === 'stripe') {
+        if (!stripe || !elements) {
+          toast.error('Stripe not loaded. Please refresh the page.');
+          setLoading(false);
+          return;
+        }
+
+        // Create payment intent
+        const intentResponse = await api.post('/payment/create-intent', {
+          amount: totalAmount,
+          order_id: 'temp_' + Date.now()
+        });
+
+        // Confirm card payment
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          intentResponse.data.client_secret,
+          {
+            payment_method: {
+              card: elements.getElement(CardElement),
+            },
+          }
+        );
+
+        if (error) {
+          toast.error(error.message || 'Payment failed');
+          setLoading(false);
+          return;
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+          // Create order after successful payment
+          const response = await api.post('/orders', orderData);
+          toast.success('Payment successful! Order placed.');
+          localStorage.removeItem('cart');
+          navigate(`/order-confirmation/${response.data.order_id}`);
+        }
+      } else {
+        // Handle COD payment
+        const response = await api.post('/orders', orderData);
+        toast.success('Order placed successfully!');
+        localStorage.removeItem('cart');
+        navigate(`/order-confirmation/${response.data.order_id}`);
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to place order');
     } finally {
