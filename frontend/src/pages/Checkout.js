@@ -392,3 +392,11 @@ const CheckoutForm = () => {
     </div>
   );
 };
+
+export const Checkout = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutForm />
+    </Elements>
+  );
+};
