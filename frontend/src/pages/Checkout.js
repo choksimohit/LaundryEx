@@ -19,7 +19,9 @@ import { toast } from 'sonner';
 
 const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
 
-export const Checkout = () => {
+const CheckoutForm = () => {
+  const stripe = useStripe();
+  const elements = useElements();
   const [cart, setCart] = useState([]);
   const [formData, setFormData] = useState({
     pickup_date: '',
