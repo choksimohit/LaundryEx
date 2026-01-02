@@ -309,21 +309,50 @@ const CheckoutForm = () => {
                   onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
                   data-testid="payment-method-group"
                 >
-                  <div className="flex items-center space-x-2 p-4 border-2 border-blue-500 rounded-xl bg-blue-50">
+                  <div className={`flex items-center space-x-2 p-4 border-2 rounded-xl ${formData.payment_method === 'cod' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <RadioGroupItem value="cod" id="cod" data-testid="payment-method-cod" />
                     <Label htmlFor="cod" className="flex-1 cursor-pointer">
                       <div className="font-semibold text-slate-800">Cash on Delivery</div>
                       <div className="text-sm text-slate-600 mt-1">Pay when your order is delivered</div>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl bg-slate-50 opacity-60">
-                    <RadioGroupItem value="stripe" id="stripe" disabled data-testid="payment-method-stripe" />
-                    <Label htmlFor="stripe" className="flex-1">
-                      <div className="font-semibold text-slate-500">Credit/Debit Card (Stripe)</div>
-                      <div className="text-sm text-slate-400 mt-1">Coming soon - Currently unavailable</div>
+                  <div className={`flex items-center space-x-2 p-4 border-2 rounded-xl ${formData.payment_method === 'stripe' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    <RadioGroupItem value="stripe" id="stripe" data-testid="payment-method-stripe" />
+                    <Label htmlFor="stripe" className="flex-1 cursor-pointer">
+                      <div className="font-semibold text-slate-800">Credit/Debit Card</div>
+                      <div className="text-sm text-slate-600 mt-1">Secure payment via Stripe</div>
                     </Label>
                   </div>
                 </RadioGroup>
+
+                {formData.payment_method === 'stripe' && (
+                  <div className="mt-6 p-4 border-2 border-slate-200 rounded-xl">
+                    <Label className="mb-3 block text-sm font-medium">Card Details</Label>
+                    <CardElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                            '::placeholder': {
+                              color: '#94a3b8',
+                            },
+                          },
+                          invalid: {
+                            color: '#ef4444',
+                          },
+                        },
+                      }}
+                    />
+                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Secured by Stripe</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Button
@@ -332,7 +361,7 @@ const CheckoutForm = () => {
                 className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all disabled:opacity-50"
                 data-testid="place-order-button"
               >
-                {loading ? 'Placing Order...' : `Place Order - £${totalAmount.toFixed(2)}`}
+                {loading ? 'Processing...' : formData.payment_method === 'stripe' ? `Pay £${totalAmount.toFixed(2)}` : `Place Order - £${totalAmount.toFixed(2)}`}
               </Button>
             </form>
           </div>
