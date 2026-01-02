@@ -36,7 +36,7 @@ export const Cart = () => {
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const minOrder = 30;
+  const minOrder = 0; // Temporarily set to 0 for testing (was 30)
   const canCheckout = totalAmount >= minOrder;
 
   return (
