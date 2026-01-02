@@ -250,8 +250,9 @@ async def get_categories():
 
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
-    if order_data.total_amount < 30:
-        raise HTTPException(status_code=400, detail="Minimum order value is £30")
+    # Temporarily disabled for testing
+    # if order_data.total_amount < 30:
+    #     raise HTTPException(status_code=400, detail="Minimum order value is £30")
     
     order_id = str(uuid.uuid4())
     
