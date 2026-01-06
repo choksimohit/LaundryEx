@@ -12,10 +12,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import api from '../utils/api';
 import { toast } from 'sonner';
 
-export const Checkout = () => {
+const stripePromise = loadStripe(process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY);
+
+const CheckoutForm = () => {
+  const stripe = useStripe();
+  const elements = useElements();
   const [cart, setCart] = useState([]);
   const [formData, setFormData] = useState({
     pickup_date: '',
@@ -75,11 +81,50 @@ export const Checkout = () => {
         total_amount: totalAmount,
       };
 
-      const response = await api.post('/orders', orderData);
-      
-      toast.success('Order placed successfully!');
-      localStorage.removeItem('cart');
-      navigate(`/order-confirmation/${response.data.order_id}`);
+      // Handle Stripe payment
+      if (formData.payment_method === 'stripe') {
+        if (!stripe || !elements) {
+          toast.error('Stripe not loaded. Please refresh the page.');
+          setLoading(false);
+          return;
+        }
+
+        // Create payment intent
+        const intentResponse = await api.post('/payment/create-intent', {
+          amount: totalAmount,
+          order_id: 'temp_' + Date.now()
+        });
+
+        // Confirm card payment
+        const { error, paymentIntent } = await stripe.confirmCardPayment(
+          intentResponse.data.client_secret,
+          {
+            payment_method: {
+              card: elements.getElement(CardElement),
+            },
+          }
+        );
+
+        if (error) {
+          toast.error(error.message || 'Payment failed');
+          setLoading(false);
+          return;
+        }
+
+        if (paymentIntent.status === 'succeeded') {
+          // Create order after successful payment
+          const response = await api.post('/orders', orderData);
+          toast.success('Payment successful! Order placed.');
+          localStorage.removeItem('cart');
+          navigate(`/order-confirmation/${response.data.order_id}`);
+        }
+      } else {
+        // Handle COD payment
+        const response = await api.post('/orders', orderData);
+        toast.success('Order placed successfully!');
+        localStorage.removeItem('cart');
+        navigate(`/order-confirmation/${response.data.order_id}`);
+      }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to place order');
     } finally {
@@ -264,28 +309,59 @@ export const Checkout = () => {
                   onValueChange={(value) => setFormData({ ...formData, payment_method: value })}
                   data-testid="payment-method-group"
                 >
-                  <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl hover:bg-slate-50">
-                    <RadioGroupItem value="cod" id="cod" data-testid="payment-cod" />
+                  <div className={`flex items-center space-x-2 p-4 border-2 rounded-xl ${formData.payment_method === 'cod' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    <RadioGroupItem value="cod" id="cod" data-testid="payment-method-cod" />
                     <Label htmlFor="cod" className="flex-1 cursor-pointer">
-                      Cash on Delivery
+                      <div className="font-semibold text-slate-800">Cash on Delivery</div>
+                      <div className="text-sm text-slate-600 mt-1">Pay when your order is delivered</div>
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 p-4 border border-slate-200 rounded-xl hover:bg-slate-50">
-                    <RadioGroupItem value="stripe" id="stripe" data-testid="payment-stripe" />
+                  <div className={`flex items-center space-x-2 p-4 border-2 rounded-xl ${formData.payment_method === 'stripe' ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    <RadioGroupItem value="stripe" id="stripe" data-testid="payment-method-stripe" />
                     <Label htmlFor="stripe" className="flex-1 cursor-pointer">
-                      Credit/Debit Card (Stripe)
+                      <div className="font-semibold text-slate-800">Credit/Debit Card</div>
+                      <div className="text-sm text-slate-600 mt-1">Secure payment via Stripe</div>
                     </Label>
                   </div>
                 </RadioGroup>
+
+                {formData.payment_method === 'stripe' && (
+                  <div className="mt-6 p-4 border-2 border-slate-200 rounded-xl">
+                    <Label className="mb-3 block text-sm font-medium">Card Details</Label>
+                    <CardElement
+                      options={{
+                        style: {
+                          base: {
+                            fontSize: '16px',
+                            color: '#1e293b',
+                            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+                            '::placeholder': {
+                              color: '#94a3b8',
+                            },
+                          },
+                          invalid: {
+                            color: '#ef4444',
+                          },
+                        },
+                      }}
+                    />
+                    <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                      <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                      </svg>
+                      <span>Secured by Stripe</span>
+                    </div>
+                  </div>
+                )}
               </div>
 
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all"
+                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all disabled:opacity-50"
                 data-testid="place-order-button"
               >
-                {loading ? 'Placing Order...' : `Place Order - £${totalAmount.toFixed(2)}`}
+                {loading ? 'Processing...' : formData.payment_method === 'stripe' ? `Pay £${totalAmount.toFixed(2)}` : `Place Order - £${totalAmount.toFixed(2)}`}
               </Button>
             </form>
           </div>
@@ -295,9 +371,9 @@ export const Checkout = () => {
               <h2 className="text-xl font-semibold mb-6">Order Summary</h2>
               <div className="space-y-4 mb-6">
                 {cart.map(item => (
-                  <div key={item.service_id} className="flex justify-between text-sm" data-testid={`summary-item-${item.service_id}`}>
+                  <div key={item.product_id} className="flex justify-between text-sm" data-testid={`summary-item-${item.product_id}`}>
                     <span className="text-slate-600">
-                      {item.service_name} x {item.quantity}
+                      {item.product_name} × {item.quantity}
                     </span>
                     <span className="font-medium">£{(item.price * item.quantity).toFixed(2)}</span>
                   </div>
@@ -314,5 +390,13 @@ export const Checkout = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+export const Checkout = () => {
+  return (
+    <Elements stripe={stripePromise}>
+      <CheckoutForm />
+    </Elements>
   );
 };

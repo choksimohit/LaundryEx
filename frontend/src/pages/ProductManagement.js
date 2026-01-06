@@ -16,24 +16,129 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '../components/ui/dialog';
-import { Pencil, Trash2, Plus, Search } from 'lucide-react';
+import { Pencil, Trash2, Plus, Search, GripVertical } from 'lucide-react';
 import api from '../utils/api';
 import { toast } from 'sonner';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Sortable Product Item Component
+const SortableProductItem = ({ product, onEdit, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: product.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="p-6 hover:bg-slate-50 transition-colors border-b border-slate-200 last:border-b-0"
+      data-testid={`product-row-${product.id}`}
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4 flex-1">
+          <div
+            {...attributes}
+            {...listeners}
+            className="cursor-grab active:cursor-grabbing touch-none"
+          >
+            <GripVertical className="h-5 w-5 text-slate-400" />
+          </div>
+
+          {product.icon_url ? (
+            <img
+              src={product.icon_url}
+              alt={product.name}
+              className="w-16 h-16 object-cover rounded-lg"
+            />
+          ) : (
+            <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
+              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+              </svg>
+            </div>
+          )}
+
+          <div className="flex-1">
+            <h4 className="font-medium text-lg text-slate-800">{product.name}</h4>
+            {product.subcategory && (
+              <p className="text-sm text-slate-500">{product.subcategory}</p>
+            )}
+            <p className="text-xs text-slate-400 mt-1">{product.business_name}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <div className="text-2xl font-bold text-blue-600">
+              £{product.price.toFixed(2)}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => onEdit(product)}
+              data-testid={`edit-product-${product.id}`}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+            <Button
+              size="icon"
+              variant="outline"
+              onClick={() => onDelete(product.id)}
+              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+              data-testid={`delete-product-${product.id}`}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export const ProductManagement = () => {
   const [products, setProducts] = useState([]);
   const [businesses, setBusinesses] = useState([]);
-  const [serviceTypes, setServiceTypes] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [subcategories, setSubcategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterServiceType, setFilterServiceType] = useState('all');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [filterSubcategory, setFilterSubcategory] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
   const [formData, setFormData] = useState({
     business_id: '',
-    service_type: '',
+    service_type: 'Laundry Service',
     category: '',
     subcategory: '',
     name: '',
@@ -41,25 +146,32 @@ export const ProductManagement = () => {
     icon_url: '',
   });
 
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
     try {
-      const [productsRes, businessesRes, serviceTypesRes] = await Promise.all([
+      const [productsRes, businessesRes] = await Promise.all([
         api.get('/admin/products'),
         api.get('/admin/businesses'),
-        api.get('/service-types'),
       ]);
       
       setProducts(productsRes.data);
       setBusinesses(businessesRes.data);
-      setServiceTypes(serviceTypesRes.data);
       
-      // Extract unique categories
-      const uniqueCategories = [...new Set(productsRes.data.map(p => p.category))];
+      // Extract unique categories and subcategories
+      const uniqueCategories = [...new Set(productsRes.data.map(p => p.category))].filter(Boolean);
+      const uniqueSubcategories = [...new Set(productsRes.data.map(p => p.subcategory))].filter(Boolean);
       setCategories(uniqueCategories);
+      setSubcategories(uniqueSubcategories);
     } catch (error) {
       toast.error('Failed to load data');
     }
@@ -95,7 +207,7 @@ export const ProductManagement = () => {
     setEditingProduct(product);
     setFormData({
       business_id: product.business_id,
-      service_type: product.service_type,
+      service_type: product.service_type || 'Laundry Service',
       category: product.category,
       subcategory: product.subcategory || '',
       name: product.name,
@@ -122,7 +234,7 @@ export const ProductManagement = () => {
   const resetForm = () => {
     setFormData({
       business_id: '',
-      service_type: '',
+      service_type: 'Laundry Service',
       category: '',
       subcategory: '',
       name: '',
@@ -132,17 +244,50 @@ export const ProductManagement = () => {
     setEditingProduct(null);
   };
 
+  const handleDragEnd = async (event, groupKey) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const groupProducts = groupedProducts[groupKey];
+    const oldIndex = groupProducts.findIndex(p => p.id === active.id);
+    const newIndex = groupProducts.findIndex(p => p.id === over.id);
+
+    const reorderedProducts = arrayMove(groupProducts, oldIndex, newIndex);
+
+    // Update local state immediately for smooth UX
+    const updatedGrouped = { ...groupedProducts, [groupKey]: reorderedProducts };
+    const allUpdatedProducts = Object.values(updatedGrouped).flat();
+    setProducts(allUpdatedProducts);
+
+    // Prepare updates with new sort_order
+    const updates = reorderedProducts.map((product, index) => ({
+      id: product.id,
+      sort_order: index,
+    }));
+
+    try {
+      await api.post('/admin/products/reorder', { updates });
+      toast.success('Product order updated');
+    } catch (error) {
+      toast.error('Failed to update product order');
+      loadData(); // Reload on error
+    }
+  };
+
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.category.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesServiceType = filterServiceType === 'all' || product.service_type === filterServiceType;
     const matchesCategory = filterCategory === 'all' || product.category === filterCategory;
+    const matchesSubcategory = filterSubcategory === 'all' || product.subcategory === filterSubcategory;
     
-    return matchesSearch && matchesServiceType && matchesCategory;
+    return matchesSearch && matchesCategory && matchesSubcategory;
   });
 
   const groupedProducts = filteredProducts.reduce((acc, product) => {
-    const key = `${product.service_type} > ${product.category}`;
+    const key = `${product.category} ${product.subcategory ? `> ${product.subcategory}` : ''}`;
     if (!acc[key]) {
       acc[key] = [];
     }
@@ -159,7 +304,7 @@ export const ProductManagement = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700" data-testid="add-product-button">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" data-testid="add-product-button">
               <Plus className="h-4 w-4 mr-2" />
               Add Product
             </Button>
@@ -190,41 +335,39 @@ export const ProductManagement = () => {
               </div>
 
               <div>
-                <Label htmlFor="service_type">Service Type *</Label>
-                <Input
-                  id="service_type"
-                  value={formData.service_type}
-                  onChange={(e) => setFormData({ ...formData, service_type: e.target.value })}
-                  placeholder="e.g., Dry Cleaning, Laundry"
-                  required
-                  className="mt-2"
-                  data-testid="service-type-input"
-                />
-              </div>
-
-              <div>
                 <Label htmlFor="category">Category *</Label>
-                <Input
-                  id="category"
+                <Select
                   value={formData.category}
-                  onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                  placeholder="e.g., Accessories, Bottoms, Tops"
+                  onValueChange={(value) => setFormData({ ...formData, category: value })}
                   required
-                  className="mt-2"
-                  data-testid="category-input"
-                />
+                >
+                  <SelectTrigger className="mt-2" data-testid="category-select">
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map(cat => (
+                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
                 <Label htmlFor="subcategory">Subcategory (Optional)</Label>
-                <Input
-                  id="subcategory"
-                  value={formData.subcategory}
-                  onChange={(e) => setFormData({ ...formData, subcategory: e.target.value })}
-                  placeholder="e.g., Delicate, Pleat"
-                  className="mt-2"
-                  data-testid="subcategory-input"
-                />
+                <Select
+                  value={formData.subcategory || 'none'}
+                  onValueChange={(value) => setFormData({ ...formData, subcategory: value === 'none' ? '' : value })}
+                >
+                  <SelectTrigger className="mt-2" data-testid="subcategory-select">
+                    <SelectValue placeholder="Select subcategory (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">None</SelectItem>
+                    {subcategories.map(subcat => (
+                      <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div>
@@ -287,7 +430,7 @@ export const ProductManagement = () => {
                 </Button>
                 <Button
                   type="submit"
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
                   data-testid="submit-product-button"
                 >
                   {editingProduct ? 'Update Product' : 'Create Product'}
@@ -316,21 +459,6 @@ export const ProductManagement = () => {
           </div>
           
           <div>
-            <Label>Filter by Service Type</Label>
-            <Select value={filterServiceType} onValueChange={setFilterServiceType}>
-              <SelectTrigger className="mt-2">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Service Types</SelectItem>
-                {serviceTypes.map(type => (
-                  <SelectItem key={type.name} value={type.name}>{type.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
             <Label>Filter by Category</Label>
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="mt-2">
@@ -344,81 +472,54 @@ export const ProductManagement = () => {
               </SelectContent>
             </Select>
           </div>
+
+          <div>
+            <Label>Filter by Subcategory</Label>
+            <Select value={filterSubcategory} onValueChange={setFilterSubcategory}>
+              <SelectTrigger className="mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Subcategories</SelectItem>
+                {subcategories.map(subcat => (
+                  <SelectItem key={subcat} value={subcat}>{subcat}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
-      {/* Products List */}
+      {/* Products List with Drag and Drop */}
       <div className="space-y-6">
         {Object.entries(groupedProducts).map(([groupKey, groupProducts]) => (
           <div key={groupKey} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
               <h3 className="font-semibold text-lg text-blue-600">{groupKey}</h3>
-              <p className="text-sm text-slate-600">{groupProducts.length} product(s)</p>
+              <p className="text-sm text-slate-600">{groupProducts.length} product(s) - Drag to reorder within this group</p>
             </div>
-            
-            <div className="divide-y divide-slate-200">
-              {groupProducts.map(product => (
-                <div
-                  key={product.id}
-                  className="p-6 hover:bg-slate-50 transition-colors"
-                  data-testid={`product-row-${product.id}`}
-                >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4 flex-1">
-                      {product.icon_url ? (
-                        <img
-                          src={product.icon_url}
-                          alt={product.name}
-                          className="w-16 h-16 object-cover rounded-lg"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-slate-100 rounded-lg flex items-center justify-center">
-                          <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
-                          </svg>
-                        </div>
-                      )}
-                      
-                      <div className="flex-1">
-                        <h4 className="font-medium text-lg text-slate-800">{product.name}</h4>
-                        {product.subcategory && (
-                          <p className="text-sm text-slate-500">{product.subcategory}</p>
-                        )}
-                        <p className="text-xs text-slate-400 mt-1">{product.business_name}</p>
-                      </div>
-                    </div>
 
-                    <div className="flex items-center gap-4">
-                      <div className="text-right">
-                        <div className="text-2xl font-bold text-blue-600">
-                          £{product.price.toFixed(2)}
-                        </div>
-                      </div>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleEdit(product)}
-                          data-testid={`edit-product-${product.id}`}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="outline"
-                          onClick={() => handleDelete(product.id)}
-                          className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          data-testid={`delete-product-${product.id}`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={(event) => handleDragEnd(event, groupKey)}
+            >
+              <SortableContext
+                items={groupProducts.map(p => p.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div>
+                  {groupProducts.map(product => (
+                    <SortableProductItem
+                      key={product.id}
+                      product={product}
+                      onEdit={handleEdit}
+                      onDelete={handleDelete}
+                    />
+                  ))}
                 </div>
-              ))}
-            </div>
+              </SortableContext>
+            </DndContext>
           </div>
         ))}
 

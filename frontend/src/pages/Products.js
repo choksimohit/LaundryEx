@@ -9,9 +9,9 @@ import { isAuthenticated } from '../utils/auth';
 
 export const Products = () => {
   const [products, setProducts] = useState([]);
-  const [serviceTypes, setServiceTypes] = useState([]);
-  const [selectedServiceType, setSelectedServiceType] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState({});
+  const [categories, setCategories] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [expandedSubcategories, setExpandedSubcategories] = useState({});
   const [cart, setCart] = useState([]);
   const [pinCode, setPinCode] = useState('');
   const [hasValidPinCode, setHasValidPinCode] = useState(false);
@@ -24,7 +24,7 @@ export const Products = () => {
     if (savedPinCode) {
       setPinCode(savedPinCode);
       setHasValidPinCode(true);
-      loadServiceTypes();
+      loadCategories();
     }
     
     const savedCart = localStorage.getItem('cart');
@@ -34,10 +34,10 @@ export const Products = () => {
   }, []);
 
   useEffect(() => {
-    if (selectedServiceType && hasValidPinCode) {
+    if (selectedCategory && hasValidPinCode) {
       loadProducts();
     }
-  }, [selectedServiceType, hasValidPinCode]);
+  }, [selectedCategory, hasValidPinCode]);
 
   const checkPinCode = async () => {
     if (!pinCode || pinCode.length < 3) {
@@ -53,7 +53,7 @@ export const Products = () => {
         sessionStorage.setItem('pinCode', pinCode.toUpperCase());
         sessionStorage.setItem('businesses', JSON.stringify(response.data.businesses));
         setHasValidPinCode(true);
-        loadServiceTypes();
+        loadCategories();
       } else {
         toast.error('Service not available in your area yet');
         setHasValidPinCode(false);
@@ -65,45 +65,50 @@ export const Products = () => {
     }
   };
 
-  const loadServiceTypes = async () => {
+  const loadCategories = async () => {
     try {
-      const response = await api.get('/service-types');
-      setServiceTypes(response.data);
+      const response = await api.get('/categories');
+      setCategories(response.data);
       if (response.data.length > 0) {
-        setSelectedServiceType(response.data[0].name);
+        setSelectedCategory(response.data[0].name);
       }
     } catch (error) {
-      toast.error('Failed to load service types');
+      toast.error('Failed to load categories');
     }
   };
 
   const loadProducts = async () => {
     try {
-      const response = await api.get(`/products?service_type=${selectedServiceType}`);
+      const response = await api.get(`/products?category=${encodeURIComponent(selectedCategory)}`);
+      console.log(`Loaded ${response.data.length} products for category: ${selectedCategory}`);
       setProducts(response.data);
       if (response.data.length > 0) {
-        const firstCategory = response.data[0].category;
-        setExpandedCategories({ [firstCategory]: true });
+        const firstSubcategory = response.data[0].subcategory;
+        if (firstSubcategory) {
+          setExpandedSubcategories({ [firstSubcategory]: true });
+        }
       }
     } catch (error) {
+      console.error('Failed to load products:', error);
       toast.error('Failed to load products');
     }
   };
 
-  const toggleCategory = (category) => {
-    setExpandedCategories(prev => ({
+  const toggleSubcategory = (subcategory) => {
+    setExpandedSubcategories(prev => ({
       ...prev,
-      [category]: !prev[category]
+      [subcategory]: !prev[subcategory]
     }));
   };
 
-  const groupByCategory = () => {
+  const groupBySubcategory = () => {
     const grouped = {};
     products.forEach(product => {
-      if (!grouped[product.category]) {
-        grouped[product.category] = [];
+      const key = product.subcategory || 'Other';
+      if (!grouped[key]) {
+        grouped[key] = [];
       }
-      grouped[product.category].push(product);
+      grouped[key].push(product);
     });
     return grouped;
   };
@@ -149,7 +154,7 @@ export const Products = () => {
   };
 
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const groupedProducts = groupByCategory();
+  const groupedProducts = groupBySubcategory();
 
   return (
     <div className="min-h-screen bg-slate-50" data-testid="products-page">
@@ -158,7 +163,7 @@ export const Products = () => {
         {!hasValidPinCode ? (
           <div className="bg-white rounded-2xl p-8 shadow-lg mb-8 max-w-2xl mx-auto" data-testid="pincode-checker-section">
             <div className="text-center mb-6">
-              <h2 className="text-2xl font-bold mb-2">Check Service Availability</h2>
+              <h2 className="text-2xl font-bold mb-2 text-slate-800">Check Service Availability</h2>
               <p className="text-slate-600">Enter your postcode to see available services in your area</p>
             </div>
             <div className="flex gap-3 max-w-md mx-auto">
@@ -206,44 +211,44 @@ export const Products = () => {
               </div>
             </div>
 
-            {/* Service Type Tabs */}
+            {/* Category Tabs */}
             <div className="flex flex-wrap justify-center gap-3 mb-8">
-              {serviceTypes.map(type => (
+              {categories.map(cat => (
                 <Button
-                  key={type.name}
-                  onClick={() => setSelectedServiceType(type.name)}
-                  variant={selectedServiceType === type.name ? "default" : "outline"}
-                  className={selectedServiceType === type.name ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : "border-slate-300 hover:bg-slate-50"}
-                  data-testid={`service-type-${type.name}`}
+                  key={cat.name}
+                  onClick={() => setSelectedCategory(cat.name)}
+                  variant={selectedCategory === cat.name ? "default" : "outline"}
+                  className={selectedCategory === cat.name ? "bg-blue-600 hover:bg-blue-700 text-white border-blue-600" : "border-slate-300 hover:bg-slate-50"}
+                  data-testid={`category-${cat.name}`}
                 >
-                  {type.name}
+                  {cat.name}
                 </Button>
               ))}
             </div>
 
-            {/* Products List */}
+            {/* Products List (grouped by subcategory) */}
             <div className="space-y-4" data-testid="products-list">
-              {Object.entries(groupedProducts).map(([category, categoryProducts]) => (
-                <div key={category} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
+              {Object.entries(groupedProducts).map(([subcategory, subcategoryProducts]) => (
+                <div key={subcategory} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
                   <button
-                    onClick={() => toggleCategory(category)}
+                    onClick={() => toggleSubcategory(subcategory)}
                     className="w-full flex items-center justify-between p-6 hover:bg-slate-50 transition-colors"
-                    data-testid={`category-toggle-${category}`}
+                    data-testid={`subcategory-toggle-${subcategory}`}
                   >
-                    <h2 className="text-xl font-semibold text-slate-800">{category}</h2>
-                    {expandedCategories[category] ? (
+                    <h2 className="text-xl font-semibold text-slate-800">{subcategory}</h2>
+                    {expandedSubcategories[subcategory] ? (
                       <ChevronUp className="h-6 w-6 text-blue-600" />
                     ) : (
                       <ChevronDown className="h-6 w-6 text-blue-600" />
                     )}
                   </button>
 
-                  {expandedCategories[category] && (
+                  {expandedSubcategories[subcategory] && (
                     <div className="border-t border-slate-200">
-                      {categoryProducts.map(product => (
+                      {subcategoryProducts.map(product => (
                         <div
                           key={product.id}
-                          className="flex items-center justify-between p-6 border-b last:border-b-0 hover:bg-slate-50"
+                          className="flex items-center justify-between p-6 border-b border-slate-200 last:border-b-0 hover:bg-slate-50"
                           data-testid={`product-${product.id}`}
                         >
                           <div className="flex items-center gap-4 flex-1">

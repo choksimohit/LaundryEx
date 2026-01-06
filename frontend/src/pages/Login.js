@@ -39,7 +39,7 @@ export const Login = () => {
       <div className="w-full max-w-md">
         <div className="bg-white/80 backdrop-blur-lg border border-white/20 shadow-2xl shadow-slate-200/50 rounded-3xl p-8">
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-semibold mb-2">Welcome Back</h2>
+            <h2 className="text-3xl font-semibold mb-2 text-slate-800">Welcome Back</h2>
             <p className="text-slate-600">Login to your account</p>
           </div>
 

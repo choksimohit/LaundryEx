@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import stripe
+from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -68,6 +69,9 @@ class Product(BaseModel):
     name: str
     price: float
     icon_url: Optional[str] = None
+    sort_order: Optional[int] = None
+    category_sort_order: Optional[int] = None
+    subcategory_sort_order: Optional[int] = None
 
 class CartItem(BaseModel):
     product_id: str
@@ -130,6 +134,7 @@ class ProductCreate(BaseModel):
     name: str
     price: float
     icon_url: Optional[str] = None
+    sort_order: Optional[int] = None
 
 class OrderStatusUpdate(BaseModel):
     status: str
@@ -212,16 +217,16 @@ async def check_pincode(data: PinCodeCheck):
     }
 
 @api_router.get("/products")
-async def get_products(business_id: Optional[str] = None, service_type: Optional[str] = None, category: Optional[str] = None):
+async def get_products(business_id: Optional[str] = None, category: Optional[str] = None, subcategory: Optional[str] = None):
     query = {}
     if business_id:
         query["business_id"] = business_id
-    if service_type:
-        query["service_type"] = service_type
     if category:
         query["category"] = category
+    if subcategory:
+        query["subcategory"] = subcategory
     
-    products = await db.products.find(query, {"_id": 0}).to_list(1000)
+    products = await db.products.find(query, {"_id": 0}).sort([("sort_order", 1), ("name", 1)]).to_list(1000)
     return products
 
 @api_router.get("/service-types")
@@ -234,14 +239,10 @@ async def get_service_types():
     return service_types
 
 @api_router.get("/categories")
-async def get_categories(service_type: Optional[str] = None):
-    query = {}
-    if service_type:
-        query["service_type"] = service_type
-    
+async def get_categories():
     pipeline = [
-        {"$match": query},
         {"$group": {"_id": "$category"}},
+        {"$sort": {"_id": 1}},
         {"$project": {"_id": 0, "name": "$_id"}}
     ]
     categories = await db.products.aggregate(pipeline).to_list(100)
@@ -249,12 +250,19 @@ async def get_categories(service_type: Optional[str] = None):
 
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
-    if order_data.total_amount < 30:
-        raise HTTPException(status_code=400, detail="Minimum order value is £30")
+    # Temporarily disabled for testing
+    # if order_data.total_amount < 30:
+    #     raise HTTPException(status_code=400, detail="Minimum order value is £30")
     
     order_id = str(uuid.uuid4())
+    
+    # Generate 6-digit numeric order number
+    last_order = await db.orders.find({}, {"_id": 0, "order_number": 1}).sort("order_number", -1).limit(1).to_list(1)
+    order_number = (last_order[0]["order_number"] + 1) if last_order and "order_number" in last_order[0] else 100000
+    
     order_doc = {
         "id": order_id,
+        "order_number": order_number,
         "user_id": current_user["id"],
         "user_name": current_user["name"],
         "user_email": current_user["email"],
@@ -275,7 +283,19 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
     }
     await db.orders.insert_one(order_doc)
     
-    return {"order_id": order_id, "status": "success"}
+    # Send confirmation email to customer
+    try:
+        await send_order_confirmation_email(order_doc, current_user["email"])
+    except Exception as e:
+        print(f"Failed to send customer confirmation email: {e}")
+    
+    # Send notification email to admin
+    try:
+        await send_admin_order_notification(order_doc)
+    except Exception as e:
+        print(f"Failed to send admin notification email: {e}")
+    
+    return {"order_id": order_id, "order_number": order_number, "status": "success"}
 
 @api_router.post("/payment/create-intent")
 async def create_payment_intent(data: dict, current_user: dict = Depends(get_current_user)):
@@ -306,12 +326,28 @@ async def get_order(order_id: str, current_user: dict = Depends(get_current_user
 
 @api_router.patch("/admin/orders/{order_id}/status")
 async def update_order_status(order_id: str, data: OrderStatusUpdate, admin: dict = Depends(get_admin_user)):
+    # Get the order first to send email
+    order = await db.orders.find_one({"id": order_id}, {"_id": 0})
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    
     result = await db.orders.update_one(
         {"id": order_id},
         {"$set": {"status": data.status}}
     )
+    
     if result.matched_count == 0:
         raise HTTPException(status_code=404, detail="Order not found")
+    
+    # Update order dict with new status for email
+    order["status"] = data.status
+    
+    # Send status update email to customer
+    try:
+        await send_status_update_email(order, data.status, order["user_email"])
+    except Exception as e:
+        print(f"Failed to send status update email: {e}")
+    
     return {"status": "success"}
 
 @api_router.get("/admin/businesses")
@@ -347,6 +383,13 @@ async def create_product(product_data: ProductCreate, admin: dict = Depends(get_
         raise HTTPException(status_code=404, detail="Business not found")
     
     product_id = str(uuid.uuid4())
+    
+    # Get max sort_order for this subcategory if not provided
+    if product_data.sort_order is None:
+        subcategory_filter = {"category": product_data.category, "subcategory": product_data.subcategory}
+        max_product = await db.products.find(subcategory_filter, {"_id": 0}).sort("sort_order", -1).limit(1).to_list(1)
+        product_data.sort_order = (max_product[0].get("sort_order", 0) + 1) if max_product else 0
+    
     product_doc = {
         "id": product_id,
         "business_id": product_data.business_id,
@@ -357,6 +400,7 @@ async def create_product(product_data: ProductCreate, admin: dict = Depends(get_
         "name": product_data.name,
         "price": product_data.price,
         "icon_url": product_data.icon_url,
+        "sort_order": product_data.sort_order,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.products.insert_one(product_doc)
@@ -378,6 +422,9 @@ async def update_product(product_id: str, product_data: ProductCreate, admin: di
         "price": product_data.price,
         "icon_url": product_data.icon_url,
     }
+    
+    if product_data.sort_order is not None:
+        update_doc["sort_order"] = product_data.sort_order
     
     result = await db.products.update_one(
         {"id": product_id},
@@ -420,6 +467,22 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
         "total_businesses": total_businesses,
         "total_products": total_products
     }
+
+@api_router.post("/admin/products/reorder")
+async def reorder_products(data: dict, admin: dict = Depends(get_admin_user)):
+    updates = data.get("updates", [])
+    
+    for update in updates:
+        product_id = update.get("id")
+        sort_order = update.get("sort_order")
+        
+        if product_id and sort_order is not None:
+            await db.products.update_one(
+                {"id": product_id},
+                {"$set": {"sort_order": sort_order}}
+            )
+    
+    return {"status": "success", "updated": len(updates)}
 
 app.include_router(api_router)
 

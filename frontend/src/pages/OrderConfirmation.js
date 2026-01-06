@@ -45,7 +45,7 @@ export const OrderConfirmation = () => {
           <div className="space-y-4">
             <div className="flex justify-between">
               <span className="text-slate-600">Order ID</span>
-              <span className="font-medium" data-testid="order-id">{order.id}</span>
+              <span className="font-medium text-xl text-blue-600" data-testid="order-id">#{order.order_number || order.id}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-600">Total Amount</span>
@@ -58,6 +58,20 @@ export const OrderConfirmation = () => {
             <div className="flex justify-between">
               <span className="text-slate-600">Status</span>
               <span className="font-medium capitalize" data-testid="order-status">{order.status}</span>
+            </div>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-slate-200">
+            <h3 className="font-semibold mb-4">Order Items</h3>
+            <div className="space-y-3">
+              {order.items.map((item, index) => (
+                <div key={index} className="flex justify-between text-sm">
+                  <span className="text-slate-600">
+                    {item.product_name} × {item.quantity}
+                  </span>
+                  <span className="font-medium">£{(item.price * item.quantity).toFixed(2)}</span>
+                </div>
+              ))}
             </div>
           </div>
 
@@ -79,7 +93,7 @@ export const OrderConfirmation = () => {
         <div className="flex gap-4">
           <Button
             onClick={() => navigate('/dashboard')}
-            className="flex-1 h-12 rounded-full bg-blue-600 hover:bg-blue-700"
+            className="flex-1 h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
             data-testid="view-orders-button"
           >
             View All Orders
