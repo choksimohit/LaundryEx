@@ -30,7 +30,7 @@ async def seed_database():
     admin_users = [
         {
             "id": str(uuid.uuid4()),
-            "email": "admin@laundry-express.co.uk",
+            "email": "support@laundry-express.co.uk",
             "password": pwd_context.hash("admin123"),
             "name": "Super Admin",
             "phone": "+44 7777 367078",
@@ -149,7 +149,7 @@ async def seed_database():
     
     print("\nDatabase seeding completed!")
     print("\nAdmin credentials:")
-    print("Email: admin@laundry-express.co.uk")
+    print("Email: support@laundry-express.co.uk")
     print("Password: admin123")
     print("\nAvailable pin codes: CO27FQ, CO1, CO2, CO3, CO4, CO5")
     
