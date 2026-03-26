@@ -82,7 +82,7 @@ export const Landing = () => {
       </div>
 
       <a
-        href="https://wa.me/447777367078"
+        href="https://wa.me/447777367076"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-2xl z-50 flex items-center gap-2"

@@ -20,7 +20,7 @@ export const Footer = () => {
                   </div>
                   <span className="font-semibold text-sm md:text-base">Call Us</span>
                 </div>
-                <a href="tel:+447777367078" className="text-white hover:text-yellow-400 transition-colors ml-10 text-sm md:text-base">
+                <a href="tel:+447777367076" className="text-white hover:text-yellow-400 transition-colors ml-10 text-sm md:text-base">
                   +44 7777 367076
                 </a>
               </div>
