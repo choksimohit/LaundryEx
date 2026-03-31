@@ -71,15 +71,11 @@ const SortableCategoryItem = ({ category }) => {
 export const Admin = () => {
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
-  const [businesses, setBusinesses] = useState([]);
+  const [business, setBusiness] = useState(null);
   const [adminCategories, setAdminCategories] = useState([]);
+  const [editingBusiness, setEditingBusiness] = useState(false);
+  const [businessForm, setBusinessForm] = useState({ name: '', owner_email: '', pin_codes: '' });
   const user = getUser();
-
-  const [businessForm, setBusinessForm] = useState({
-    name: '',
-    owner_email: '',
-    pin_codes: '',
-  });
 
   const categorySensors = useSensors(
     useSensor(PointerSensor),
@@ -91,7 +87,7 @@ export const Admin = () => {
   useEffect(() => {
     loadStats();
     loadOrders();
-    loadBusinesses();
+    loadBusiness();
     loadAdminCategories();
   }, []);
 
@@ -113,12 +109,46 @@ export const Admin = () => {
     }
   };
 
-  const loadBusinesses = async () => {
+  const loadBusiness = async () => {
     try {
       const response = await api.get('/admin/businesses');
-      setBusinesses(response.data);
+      if (response.data.length > 0) {
+        setBusiness(response.data[0]);
+      }
     } catch (error) {
-      toast.error('Failed to load businesses');
+      toast.error('Failed to load business');
+    }
+  };
+
+  const startEditBusiness = () => {
+    if (!business) return;
+    setBusinessForm({
+      name: business.name,
+      owner_email: business.owner_email,
+      pin_codes: business.pin_codes.join('\n'),
+    });
+    setEditingBusiness(true);
+  };
+
+  const handleSaveBusiness = async (e) => {
+    e.preventDefault();
+    try {
+      const pinCodes = businessForm.pin_codes
+        .split(/[\n,]+/)
+        .map(p => p.trim().toUpperCase())
+        .filter(p => p.length > 0);
+      
+      await api.put(`/admin/businesses/${business.id}`, {
+        name: businessForm.name,
+        owner_email: businessForm.owner_email,
+        pin_codes: pinCodes,
+      });
+      toast.success('Business updated successfully');
+      setEditingBusiness(false);
+      loadBusiness();
+      loadStats();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to update business');
     }
   };
 
@@ -128,22 +158,6 @@ export const Admin = () => {
       setAdminCategories(response.data);
     } catch (error) {
       toast.error('Failed to load categories');
-    }
-  };
-
-  const handleCreateBusiness = async (e) => {
-    e.preventDefault();
-    try {
-      await api.post('/admin/businesses', {
-        ...businessForm,
-        pin_codes: businessForm.pin_codes.split(',').map(p => p.trim()),
-      });
-      toast.success('Business created successfully');
-      setBusinessForm({ name: '', owner_email: '', pin_codes: '' });
-      loadBusinesses();
-      loadStats();
-    } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create business');
     }
   };
 
@@ -210,7 +224,7 @@ export const Admin = () => {
             <TabsTrigger value="orders" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-orders">Orders</TabsTrigger>
             <TabsTrigger value="products" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-products">Products</TabsTrigger>
             <TabsTrigger value="categories" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-categories">Categories</TabsTrigger>
-            <TabsTrigger value="businesses" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-businesses">Businesses</TabsTrigger>
+            <TabsTrigger value="businesses" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-businesses">Business Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="space-y-6" data-testid="orders-tab-content">
@@ -296,61 +310,115 @@ export const Admin = () => {
           </TabsContent>
 
           <TabsContent value="businesses" className="space-y-6" data-testid="businesses-tab-content">
-            {(user?.role === 'platform_admin' || user?.role === 'super_admin') && (
+            {business ? (
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
-                <h2 className="text-xl font-semibold mb-6 text-blue-600">Create New Business</h2>
-                <form onSubmit={handleCreateBusiness} className="space-y-4">
+                <div className="flex justify-between items-start mb-6">
                   <div>
-                    <Label htmlFor="business_name">Business Name</Label>
-                    <Input
-                      id="business_name"
-                      value={businessForm.name}
-                      onChange={(e) => setBusinessForm({ ...businessForm, name: e.target.value })}
-                      required
-                      className="h-12 rounded-xl mt-2"
-                      data-testid="business-name-input"
-                    />
+                    <h2 className="text-xl font-semibold text-blue-600">Business Settings</h2>
+                    <p className="text-sm text-slate-500 mt-1">Manage your business details and service area postcodes</p>
                   </div>
-                  <div>
-                    <Label htmlFor="owner_email">Owner Email</Label>
-                    <Input
-                      id="owner_email"
-                      type="email"
-                      value={businessForm.owner_email}
-                      onChange={(e) => setBusinessForm({ ...businessForm, owner_email: e.target.value })}
-                      required
-                      className="h-12 rounded-xl mt-2"
-                      data-testid="owner-email-input"
-                    />
+                  {!editingBusiness && (
+                    <Button
+                      onClick={startEditBusiness}
+                      className="rounded-full bg-blue-600 hover:bg-blue-700"
+                      data-testid="edit-business-button"
+                    >
+                      Edit Details
+                    </Button>
+                  )}
+                </div>
+
+                {editingBusiness ? (
+                  <form onSubmit={handleSaveBusiness} className="space-y-5">
+                    <div>
+                      <Label htmlFor="business_name">Business Name</Label>
+                      <Input
+                        id="business_name"
+                        value={businessForm.name}
+                        onChange={(e) => setBusinessForm({ ...businessForm, name: e.target.value })}
+                        required
+                        className="h-12 rounded-xl mt-2"
+                        data-testid="business-name-input"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="owner_email">Owner Email</Label>
+                      <Input
+                        id="owner_email"
+                        type="email"
+                        value={businessForm.owner_email}
+                        onChange={(e) => setBusinessForm({ ...businessForm, owner_email: e.target.value })}
+                        required
+                        className="h-12 rounded-xl mt-2"
+                        data-testid="owner-email-input"
+                      />
+                    </div>
+                    <div>
+                      <div className="flex justify-between items-center mb-2">
+                        <Label htmlFor="pin_codes">Service Area Postcodes</Label>
+                        <span className="text-sm text-slate-500" data-testid="pincode-count">
+                          {businessForm.pin_codes.split(/[\n,]+/).filter(p => p.trim()).length} postcodes
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 mb-2">One postcode per line, or comma-separated. You can paste bulk lists.</p>
+                      <textarea
+                        id="pin_codes"
+                        value={businessForm.pin_codes}
+                        onChange={(e) => setBusinessForm({ ...businessForm, pin_codes: e.target.value })}
+                        placeholder={"CO1\nCO2\nCO3\nSW1A 1AA"}
+                        required
+                        rows={12}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-xl text-sm font-mono resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        data-testid="pin-codes-textarea"
+                      />
+                    </div>
+                    <div className="flex gap-3 pt-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setEditingBusiness(false)}
+                        className="rounded-full"
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" className="rounded-full bg-blue-600 hover:bg-blue-700" data-testid="save-business-button">
+                        Save Changes
+                      </Button>
+                    </div>
+                  </form>
+                ) : (
+                  <div className="space-y-5">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="bg-slate-50 rounded-xl p-4">
+                        <p className="text-sm text-slate-500 mb-1">Business Name</p>
+                        <p className="text-lg font-medium text-slate-800" data-testid="business-name-display">{business.name}</p>
+                      </div>
+                      <div className="bg-slate-50 rounded-xl p-4">
+                        <p className="text-sm text-slate-500 mb-1">Owner Email</p>
+                        <p className="text-lg font-medium text-slate-800" data-testid="business-email-display">{business.owner_email}</p>
+                      </div>
+                    </div>
+                    <div className="bg-slate-50 rounded-xl p-4">
+                      <div className="flex justify-between items-center mb-3">
+                        <p className="text-sm text-slate-500">Service Area Postcodes</p>
+                        <span className="text-sm font-medium text-blue-600" data-testid="pincode-count-display">{business.pin_codes.length} postcodes</span>
+                      </div>
+                      <div className="flex flex-wrap gap-2 max-h-60 overflow-y-auto">
+                        {business.pin_codes.map((code, i) => (
+                          <span key={i} className="bg-white border border-slate-200 text-slate-700 text-sm px-3 py-1 rounded-full">
+                            {code}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <Label htmlFor="pin_codes">Pin Codes (comma-separated)</Label>
-                    <Input
-                      id="pin_codes"
-                      value={businessForm.pin_codes}
-                      onChange={(e) => setBusinessForm({ ...businessForm, pin_codes: e.target.value })}
-                      placeholder="SW1A 1AA, SW1A 2AA"
-                      required
-                      className="h-12 rounded-xl mt-2"
-                      data-testid="pin-codes-input"
-                    />
-                  </div>
-                  <Button type="submit" className="rounded-full bg-blue-600 hover:bg-blue-700" data-testid="create-business-button">
-                    Create Business
-                  </Button>
-                </form>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+                <p className="text-slate-500">No business configured</p>
               </div>
             )}
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6" data-testid="businesses-list">
-              {businesses.map(business => (
-                <div key={business.id} className="bg-white rounded-2xl p-6 border border-slate-200" data-testid={`business-${business.id}`}>
-                  <h3 className="text-xl font-semibold mb-2">{business.name}</h3>
-                  <p className="text-sm text-slate-600 mb-2">Owner: {business.owner_email}</p>
-                  <p className="text-sm text-slate-600">Pin Codes: {business.pin_codes.join(', ')}</p>
-                </div>
-              ))}
-            </div>
           </TabsContent>
 
           <TabsContent value="products" className="space-y-6" data-testid="products-tab-content">

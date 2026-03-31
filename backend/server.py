@@ -383,6 +383,20 @@ async def create_business(business_data: BusinessCreate, admin: dict = Depends(g
     await db.businesses.insert_one(business_doc)
     return {"business_id": business_id, "status": "success"}
 
+@api_router.put("/admin/businesses/{business_id}")
+async def update_business(business_id: str, business_data: BusinessCreate, admin: dict = Depends(get_admin_user)):
+    result = await db.businesses.update_one(
+        {"id": business_id},
+        {"$set": {
+            "name": business_data.name,
+            "owner_email": business_data.owner_email,
+            "pin_codes": business_data.pin_codes,
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Business not found")
+    return {"status": "success"}
+
 @api_router.get("/admin/products")
 async def get_admin_products(admin: dict = Depends(get_admin_user)):
     products = await db.products.find({}, {"_id": 0}).to_list(1000)
