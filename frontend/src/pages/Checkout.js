@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, MapPin, CreditCard } from 'lucide-react';
+import { Calendar, Clock, MapPin, CreditCard, MessageSquare } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -33,6 +33,7 @@ const CheckoutForm = () => {
     address: '',
     pin_code: '',
     payment_method: 'cod',
+    customer_note: '',
   });
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -299,6 +300,26 @@ const CheckoutForm = () => {
                       data-testid="pincode-input"
                     />
                   </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200">
+                <div className="flex items-center gap-2 mb-6">
+                  <MessageSquare className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-xl font-semibold">Additional Notes</h2>
+                </div>
+                <div>
+                  <Label htmlFor="customer_note">Any special instructions? (Optional)</Label>
+                  <textarea
+                    id="customer_note"
+                    name="customer_note"
+                    placeholder="E.g. stain on collar of blue shirt, handle with care, use fragrance-free detergent..."
+                    value={formData.customer_note}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full mt-2 px-3 py-2 border border-slate-200 rounded-xl text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    data-testid="customer-note-input"
+                  />
                 </div>
               </div>
 

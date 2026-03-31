@@ -96,6 +96,7 @@ class OrderCreate(BaseModel):
     payment_method: str
     total_amount: float
     delivery_charge: Optional[float] = 0
+    customer_note: Optional[str] = ""
 
 class Order(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -298,6 +299,7 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
         "items_total": items_total,
         "delivery_charge": delivery_charge,
         "total_amount": total_with_delivery,
+        "customer_note": order_data.customer_note,
         "status": "pending",
         "created_at": datetime.now(timezone.utc).isoformat()
     }

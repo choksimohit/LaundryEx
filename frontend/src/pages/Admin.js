@@ -265,6 +265,16 @@ export const Admin = () => {
                   <p className="text-sm text-slate-800 ml-6">{order.address || 'N/A'}</p>
                   <p className="text-sm text-slate-500 ml-6">Postcode: {order.pin_code || 'N/A'}</p>
                 </div>
+
+                {order.customer_note && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4" data-testid={`order-note-${order.id}`}>
+                    <div className="flex items-center gap-2 mb-1">
+                      <MessageSquare className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm font-medium text-amber-800">Customer Note</span>
+                    </div>
+                    <p className="text-sm text-amber-700 ml-6 italic">{order.customer_note}</p>
+                  </div>
+                )}
                 
                 <div className="border-t border-slate-200 pt-4 mb-4">
                   <h4 className="text-sm font-medium text-slate-700 mb-2">Order Items:</h4>
