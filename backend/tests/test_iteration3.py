@@ -15,7 +15,7 @@ import os
 BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', '').rstrip('/')
 
 # Test credentials
-ADMIN_EMAIL = "admin@laundry-express.co.uk"
+ADMIN_EMAIL = "support@laundry-express.co.uk"
 ADMIN_PASSWORD = "admin123"
 CUSTOMER_EMAIL = "customer@test.com"
 CUSTOMER_PASSWORD = "password123"

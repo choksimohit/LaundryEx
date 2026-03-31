@@ -1,7 +1,7 @@
 # Test Credentials
 
 ## Admin
-- Email: admin@laundry-express.co.uk
+- Email: support@laundry-express.co.uk
 - Password: admin123
 
 ## Test Customer

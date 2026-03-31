@@ -212,7 +212,7 @@ async def seed_database():
     # Create admin user
     admin_user = {
         "id": str(uuid.uuid4()),
-        "email": "admin@laundry-express.co.uk",
+        "email": "support@laundry-express.co.uk",
         "password": pwd_context.hash("admin123"),
         "name": "Admin",
         "phone": "+447777367078",
@@ -227,7 +227,7 @@ async def seed_database():
     business = {
         "id": business_id,
         "name": "Laundry Express",
-        "owner_email": "admin@laundry-express.co.uk",
+        "owner_email": "support@laundry-express.co.uk",
         "pin_codes": ["CO27FQ", "CO1", "CO2", "CO3", "CO4", "CO5"],
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -263,7 +263,7 @@ async def seed_database():
         print(f"  - {cat}: {', '.join(subcats) if subcats else 'No subcategories'}")
     
     print("\nAdmin credentials:")
-    print("Email: admin@laundry-express.co.uk")
+    print("Email: support@laundry-express.co.uk")
     print("Password: admin123")
     print("\nAvailable pin codes: CO27FQ, CO1, CO2, CO3, CO4, CO5")
 
