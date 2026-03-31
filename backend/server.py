@@ -97,6 +97,8 @@ class OrderCreate(BaseModel):
     total_amount: float
     delivery_charge: Optional[float] = 0
     customer_note: Optional[str] = ""
+    promo_code: Optional[str] = ""
+    discount_amount: Optional[float] = 0
 
 class Order(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -276,8 +278,13 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
     
     # Calculate delivery charge server-side
     items_total = sum(item.price * item.quantity for item in order_data.items)
-    delivery_charge = 0 if items_total >= 30 else 4.45
-    total_with_delivery = items_total + delivery_charge
+    discount = 0
+    promo_code = order_data.promo_code.strip().upper() if order_data.promo_code else ""
+    if promo_code == "WELCOME10":
+        discount = round(items_total * 0.10, 2)
+    after_discount = items_total - discount
+    delivery_charge = 0 if after_discount >= 30 else 4.45
+    total_with_delivery = after_discount + delivery_charge
     
     order_doc = {
         "id": order_id,
@@ -297,6 +304,8 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
         "payment_method": order_data.payment_method,
         "payment_status": "pending" if order_data.payment_method == "stripe" else "cod",
         "items_total": items_total,
+        "promo_code": promo_code,
+        "discount_amount": discount,
         "delivery_charge": delivery_charge,
         "total_amount": total_with_delivery,
         "customer_note": order_data.customer_note,

@@ -36,6 +36,9 @@ const CheckoutForm = () => {
     customer_note: '',
   });
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError, setPromoError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -70,8 +73,27 @@ const CheckoutForm = () => {
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const deliveryCharge = totalAmount >= 30 ? 0 : 4.45;
-  const grandTotal = totalAmount + deliveryCharge;
+  const discount = promoApplied ? +(totalAmount * 0.10).toFixed(2) : 0;
+  const afterDiscount = totalAmount - discount;
+  const deliveryCharge = afterDiscount >= 30 ? 0 : 4.45;
+  const grandTotal = afterDiscount + deliveryCharge;
+
+  const applyPromoCode = () => {
+    if (promoCode.trim().toUpperCase() === 'WELCOME10') {
+      setPromoApplied(true);
+      setPromoError('');
+      toast.success('Promo code applied! 10% off your order.');
+    } else {
+      setPromoApplied(false);
+      setPromoError('Invalid promo code');
+    }
+  };
+
+  const removePromoCode = () => {
+    setPromoCode('');
+    setPromoApplied(false);
+    setPromoError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -83,6 +105,8 @@ const CheckoutForm = () => {
         ...formData,
         total_amount: grandTotal,
         delivery_charge: deliveryCharge,
+        promo_code: promoApplied ? 'WELCOME10' : '',
+        discount_amount: discount,
       };
 
       // Handle Stripe payment
@@ -404,10 +428,58 @@ const CheckoutForm = () => {
                 ))}
               </div>
               <div className="border-t border-slate-200 pt-4 space-y-3">
+                {/* Promo Code */}
+                <div className="pb-3">
+                  {promoApplied ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-3 py-2" data-testid="promo-applied">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-700 font-semibold text-sm">WELCOME10</span>
+                        <span className="text-green-600 text-xs">(-10%)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removePromoCode}
+                        className="text-red-500 hover:text-red-700 text-xs font-medium"
+                        data-testid="remove-promo-button"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Promo code"
+                          value={promoCode}
+                          onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
+                          className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          data-testid="promo-code-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={applyPromoCode}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          data-testid="apply-promo-button"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                      {promoError && <p className="text-red-500 text-xs mt-1" data-testid="promo-error">{promoError}</p>}
+                    </div>
+                  )}
+                </div>
+
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">Subtotal</span>
                   <span className="font-medium" data-testid="checkout-subtotal">£{totalAmount.toFixed(2)}</span>
                 </div>
+                {promoApplied && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-600">Discount (10%)</span>
+                    <span className="font-medium text-green-600" data-testid="checkout-discount">-£{discount.toFixed(2)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-slate-600">Delivery</span>
                   {deliveryCharge > 0 ? (
