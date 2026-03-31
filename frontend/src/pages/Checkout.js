@@ -69,6 +69,8 @@ const CheckoutForm = () => {
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const deliveryCharge = totalAmount >= 30 ? 0 : 4.45;
+  const grandTotal = totalAmount + deliveryCharge;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,7 +80,8 @@ const CheckoutForm = () => {
       const orderData = {
         items: cart,
         ...formData,
-        total_amount: totalAmount,
+        total_amount: grandTotal,
+        delivery_charge: deliveryCharge,
       };
 
       // Handle Stripe payment
@@ -91,7 +94,7 @@ const CheckoutForm = () => {
 
         // Create payment intent
         const intentResponse = await api.post('/payment/create-intent', {
-          amount: totalAmount,
+          amount: grandTotal,
           order_id: 'temp_' + Date.now()
         });
 
@@ -361,7 +364,7 @@ const CheckoutForm = () => {
                 className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all disabled:opacity-50"
                 data-testid="place-order-button"
               >
-                {loading ? 'Processing...' : formData.payment_method === 'stripe' ? `Pay £${totalAmount.toFixed(2)}` : `Place Order - £${totalAmount.toFixed(2)}`}
+                {loading ? 'Processing...' : formData.payment_method === 'stripe' ? `Pay £${grandTotal.toFixed(2)}` : `Place Order - £${grandTotal.toFixed(2)}`}
               </Button>
             </form>
           </div>
@@ -379,10 +382,22 @@ const CheckoutForm = () => {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-slate-200 pt-4">
-                <div className="flex justify-between items-center">
+              <div className="border-t border-slate-200 pt-4 space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Subtotal</span>
+                  <span className="font-medium" data-testid="checkout-subtotal">£{totalAmount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Delivery</span>
+                  {deliveryCharge > 0 ? (
+                    <span className="font-medium text-amber-600" data-testid="checkout-delivery-charge">£{deliveryCharge.toFixed(2)}</span>
+                  ) : (
+                    <span className="font-medium text-green-600" data-testid="checkout-delivery-charge">FREE</span>
+                  )}
+                </div>
+                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
                   <span className="text-lg font-semibold">Total</span>
-                  <span className="text-2xl font-bold text-blue-600" data-testid="checkout-total">£{totalAmount.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-blue-600" data-testid="checkout-total">£{grandTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

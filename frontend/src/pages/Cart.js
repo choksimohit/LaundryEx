@@ -36,8 +36,8 @@ export const Cart = () => {
   };
 
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const minOrder = 0; // Temporarily set to 0 for testing (was 30)
-  const canCheckout = totalAmount >= minOrder;
+  const deliveryCharge = totalAmount >= 30 ? 0 : 4.45;
+  const grandTotal = totalAmount + deliveryCharge;
 
   return (
     <div className="min-h-screen bg-slate-50" data-testid="cart-page">
@@ -111,23 +111,35 @@ export const Cart = () => {
             </div>
 
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
-              <div className="flex justify-between items-center mb-4">
-                <span className="text-lg font-medium">Total Amount</span>
-                <span className="text-2xl font-bold text-blue-600" data-testid="cart-total">£{totalAmount.toFixed(2)}</span>
-              </div>
-
-              {!canCheckout && (
-                <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl" data-testid="minimum-order-warning">
-                  <p className="text-sm text-amber-800">
-                    Minimum order value is £{minOrder.toFixed(2)}. Add £{(minOrder - totalAmount).toFixed(2)} more to checkout.
-                  </p>
+              <div className="space-y-3 mb-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Subtotal</span>
+                  <span className="font-medium" data-testid="cart-subtotal">£{totalAmount.toFixed(2)}</span>
                 </div>
-              )}
+                <div className="flex justify-between items-center">
+                  <span className="text-slate-600">Delivery</span>
+                  {deliveryCharge > 0 ? (
+                    <span className="font-medium text-amber-600" data-testid="cart-delivery-charge">£{deliveryCharge.toFixed(2)}</span>
+                  ) : (
+                    <span className="font-medium text-green-600" data-testid="cart-delivery-charge">FREE</span>
+                  )}
+                </div>
+                {deliveryCharge > 0 && (
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-xl" data-testid="free-delivery-hint">
+                    <p className="text-sm text-blue-700">
+                      Add £{(30 - totalAmount).toFixed(2)} more for <span className="font-semibold">FREE delivery</span>
+                    </p>
+                  </div>
+                )}
+                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
+                  <span className="text-lg font-medium">Total</span>
+                  <span className="text-2xl font-bold text-blue-600" data-testid="cart-total">£{grandTotal.toFixed(2)}</span>
+                </div>
+              </div>
 
               <Button
                 onClick={() => navigate('/checkout')}
-                disabled={!canCheckout}
-                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 hover:scale-105 transition-all"
                 data-testid="proceed-to-checkout-button"
               >
                 Proceed to Checkout

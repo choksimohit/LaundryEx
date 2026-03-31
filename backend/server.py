@@ -95,6 +95,7 @@ class OrderCreate(BaseModel):
     pin_code: str
     payment_method: str
     total_amount: float
+    delivery_charge: Optional[float] = 0
 
 class Order(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -272,6 +273,11 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
     last_order = await db.orders.find({}, {"_id": 0, "order_number": 1}).sort("order_number", -1).limit(1).to_list(1)
     order_number = (last_order[0]["order_number"] + 1) if last_order and "order_number" in last_order[0] else 100000
     
+    # Calculate delivery charge server-side
+    items_total = sum(item.price * item.quantity for item in order_data.items)
+    delivery_charge = 0 if items_total >= 30 else 4.45
+    total_with_delivery = items_total + delivery_charge
+    
     order_doc = {
         "id": order_id,
         "order_number": order_number,
@@ -289,7 +295,9 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
         "pin_code": order_data.pin_code,
         "payment_method": order_data.payment_method,
         "payment_status": "pending" if order_data.payment_method == "stripe" else "cod",
-        "total_amount": order_data.total_amount,
+        "items_total": items_total,
+        "delivery_charge": delivery_charge,
+        "total_amount": total_with_delivery,
         "status": "pending",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
