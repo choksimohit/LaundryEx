@@ -25,7 +25,8 @@ export const Login = () => {
       if (response.data.user.role.includes('admin')) {
         navigate('/admin');
       } else {
-        navigate('/services');
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        navigate(cart.length > 0 ? '/cart' : '/services');
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Login failed');
