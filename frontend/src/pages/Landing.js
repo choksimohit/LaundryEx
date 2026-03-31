@@ -78,6 +78,18 @@ export const Landing = () => {
               </Button>
             </div>
           </div>
+
+          <div className="mt-5 max-w-md animate-pulse-slow" data-testid="offer-banner">
+            <div className="bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg p-4 shadow-lg border border-yellow-300/50">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl sm:text-4xl font-black text-white drop-shadow-md">10% OFF</span>
+                <div className="border-l-2 border-white/40 pl-3">
+                  <p className="text-sm sm:text-base font-bold text-white">On Your First Order!</p>
+                  <p className="text-xs text-white/90">Use code <span className="font-bold bg-white/20 px-1.5 py-0.5 rounded">WELCOME10</span> at checkout</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
