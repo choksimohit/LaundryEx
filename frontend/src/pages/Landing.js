@@ -48,11 +48,11 @@ export const Landing = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 md:py-32">
         <div className="max-w-3xl">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-4 md:mb-6 text-white" data-testid="hero-title">
-            Premium Laundry &
+            Colchester's Premium
             <br />
-            Dry Cleaning in
+            Doorstep Laundry &
             <br />
-            Colchester
+            Dry Cleaning
           </h1>
 
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 sm:p-6 shadow-2xl mt-6 md:mt-8 max-w-md" data-testid="pincode-checker">
