@@ -18,34 +18,34 @@ logger = logging.getLogger(__name__)
 def generate_order_confirmation_email(order_data: Dict) -> str:
     """Generate HTML email for order confirmation sent to customer"""
     
-items_html = ""
-for item in order_data["items"]:
-    category = item.get('category', '')
-    subcategory = item.get('subcategory', '')
+    items_html = ""
+    for item in order_data["items"]:
+        category = item.get('category', '')
+        subcategory = item.get('subcategory', '')
 
-    # Build category text safely
-    category_text = ""
-    if category and subcategory:
-        category_text = f"{category} → {subcategory}"
-    elif category:
-        category_text = category
+        # Build category text safely
+        category_text = ""
+        if category and subcategory:
+            category_text = f"{category} → {subcategory}"
+        elif category:
+            category_text = category
 
-    items_html += f"""
-    <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
-            <div style="font-weight: 500; color: #1e293b;">
-                {item['product_name']}
-                {f'<span style="font-size: 12px; color: #64748b; margin-left: 6px;">({category_text})</span>' if category_text else ''}
-            </div>
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;">
-            × {item['quantity']}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 500; color: #1e293b;">
-            £{(item['price'] * item['quantity']):.2f}
-        </td>
-    </tr>
-    """
+        items_html += f"""
+        <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                <div style="font-weight: 500; color: #1e293b;">
+                    {item['product_name']}
+                    {f'<span style="font-size: 12px; color: #64748b; margin-left: 6px;">({category_text})</span>' if category_text else ''}
+                </div>
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;">
+                × {item['quantity']}
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 500; color: #1e293b;">
+                £{(item['price'] * item['quantity']):.2f}
+            </td>
+        </tr>
+        """
     
     html = f"""
     <!DOCTYPE html>
@@ -249,34 +249,34 @@ def generate_status_update_email(order_data: Dict, new_status: str) -> str:
 def generate_admin_notification_email(order_data: Dict) -> str:
     """Generate HTML email for new order notification sent to admin"""
     
-items_html = ""
-for item in order_data["items"]:
-    category = item.get('category', '')
-    subcategory = item.get('subcategory', '')
+    items_html = ""
+    for item in order_data["items"]:
+        category = item.get('category', '')
+        subcategory = item.get('subcategory', '')
 
-    # Build category text safely
-    category_text = ""
-    if category and subcategory:
-        category_text = f"{category} → {subcategory}"
-    elif category:
-        category_text = category
+        # Build category text safely
+        category_text = ""
+        if category and subcategory:
+            category_text = f"{category} → {subcategory}"
+        elif category:
+            category_text = category
 
-    items_html += f"""
-    <tr>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
-            <div style="font-weight: 500; color: #1e293b;">
-                {item['product_name']}
-                {f'<span style="font-size: 12px; color: #64748b; margin-left: 6px;">({category_text})</span>' if category_text else ''}
-            </div>
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;">
-            × {item['quantity']}
-        </td>
-        <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 500; color: #1e293b;">
-            £{(item['price'] * item['quantity']):.2f}
-        </td>
-    </tr>
-    """
+        items_html += f"""
+        <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
+                <div style="font-weight: 500; color: #1e293b;">
+                    {item['product_name']}
+                    {f'<span style="font-size: 12px; color: #64748b; margin-left: 6px;">({category_text})</span>' if category_text else ''}
+                </div>
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;">
+                × {item['quantity']}
+            </td>
+            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 500; color: #1e293b;">
+                £{(item['price'] * item['quantity']):.2f}
+            </td>
+        </tr>
+        """
     
     html = f"""
     <!DOCTYPE html>

@@ -240,13 +240,25 @@ async def get_service_types():
 
 @api_router.get("/categories")
 async def get_categories():
+    # Get distinct categories from products
     pipeline = [
         {"$group": {"_id": "$category"}},
-        {"$sort": {"_id": 1}},
         {"$project": {"_id": 0, "name": "$_id"}}
     ]
-    categories = await db.products.aggregate(pipeline).to_list(100)
-    return categories
+    product_categories = await db.products.aggregate(pipeline).to_list(100)
+    
+    # Get sort order from categories collection
+    saved_orders = {}
+    cat_docs = await db.categories.find({}, {"_id": 0}).to_list(100)
+    for doc in cat_docs:
+        saved_orders[doc["name"]] = doc.get("sort_order", 999)
+    
+    # Merge: use saved sort_order if available, otherwise alphabetical at end
+    for cat in product_categories:
+        cat["sort_order"] = saved_orders.get(cat["name"], 999)
+    
+    product_categories.sort(key=lambda c: (c["sort_order"], c["name"]))
+    return product_categories
 
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
@@ -467,6 +479,41 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
         "total_businesses": total_businesses,
         "total_products": total_products
     }
+
+@api_router.get("/admin/categories")
+async def get_admin_categories(admin: dict = Depends(get_admin_user)):
+    # Get distinct categories from products
+    pipeline = [
+        {"$group": {"_id": "$category"}},
+        {"$project": {"_id": 0, "name": "$_id"}}
+    ]
+    product_categories = await db.products.aggregate(pipeline).to_list(100)
+    
+    # Get sort order from categories collection
+    saved_orders = {}
+    cat_docs = await db.categories.find({}, {"_id": 0}).to_list(100)
+    for doc in cat_docs:
+        saved_orders[doc["name"]] = doc.get("sort_order", 999)
+    
+    for cat in product_categories:
+        cat["sort_order"] = saved_orders.get(cat["name"], 999)
+    
+    product_categories.sort(key=lambda c: (c["sort_order"], c["name"]))
+    return product_categories
+
+@api_router.post("/admin/categories/reorder")
+async def reorder_categories(data: dict, admin: dict = Depends(get_admin_user)):
+    updates = data.get("updates", [])
+    for update in updates:
+        name = update.get("name")
+        sort_order = update.get("sort_order")
+        if name and sort_order is not None:
+            await db.categories.update_one(
+                {"name": name},
+                {"$set": {"name": name, "sort_order": sort_order}},
+                upsert=True
+            )
+    return {"status": "success", "updated": len(updates)}
 
 @api_router.post("/admin/products/reorder")
 async def reorder_products(data: dict, admin: dict = Depends(get_admin_user)):

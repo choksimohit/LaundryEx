@@ -14,11 +14,65 @@ import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
 import { getUser } from '../utils/auth';
+import { GripVertical, MapPin, Clock, MessageSquare } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+const SortableCategoryItem = ({ category }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.name });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-4 bg-white rounded-xl p-4 border border-slate-200 hover:border-blue-300 transition-colors"
+      data-testid={`sortable-category-${category.name}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="h-5 w-5 text-slate-400" />
+      </div>
+      <span className="font-medium text-slate-800 flex-1">{category.name}</span>
+      <span className="text-sm text-slate-400">#{category.sort_order + 1}</span>
+    </div>
+  );
+};
 
 export const Admin = () => {
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [businesses, setBusinesses] = useState([]);
+  const [adminCategories, setAdminCategories] = useState([]);
   const user = getUser();
 
   const [businessForm, setBusinessForm] = useState({
@@ -27,10 +81,18 @@ export const Admin = () => {
     pin_codes: '',
   });
 
+  const categorySensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   useEffect(() => {
     loadStats();
     loadOrders();
     loadBusinesses();
+    loadAdminCategories();
   }, []);
 
   const loadStats = async () => {
@@ -60,6 +122,15 @@ export const Admin = () => {
     }
   };
 
+  const loadAdminCategories = async () => {
+    try {
+      const response = await api.get('/admin/categories');
+      setAdminCategories(response.data);
+    } catch (error) {
+      toast.error('Failed to load categories');
+    }
+  };
+
   const handleCreateBusiness = async (e) => {
     e.preventDefault();
     try {
@@ -83,6 +154,28 @@ export const Admin = () => {
       loadOrders();
     } catch (error) {
       toast.error('Failed to update order status');
+    }
+  };
+
+  const handleCategoryDragEnd = async (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = adminCategories.findIndex(c => c.name === active.id);
+    const newIndex = adminCategories.findIndex(c => c.name === over.id);
+    const reordered = arrayMove(adminCategories, oldIndex, newIndex);
+    
+    const updated = reordered.map((cat, i) => ({ ...cat, sort_order: i }));
+    setAdminCategories(updated);
+
+    try {
+      await api.post('/admin/categories/reorder', {
+        updates: updated.map((cat, i) => ({ name: cat.name, sort_order: i }))
+      });
+      toast.success('Category order updated');
+    } catch (error) {
+      toast.error('Failed to update category order');
+      loadAdminCategories();
     }
   };
 
@@ -116,6 +209,7 @@ export const Admin = () => {
           <TabsList className="bg-white rounded-full p-2 border border-slate-200">
             <TabsTrigger value="orders" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-orders">Orders</TabsTrigger>
             <TabsTrigger value="products" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-products">Products</TabsTrigger>
+            <TabsTrigger value="categories" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-categories">Categories</TabsTrigger>
             <TabsTrigger value="businesses" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-businesses">Businesses</TabsTrigger>
           </TabsList>
 
@@ -147,6 +241,16 @@ export const Admin = () => {
                     </Select>
                   </div>
                 </div>
+
+                {/* Customer Address */}
+                <div className="bg-slate-50 rounded-xl p-4 mb-4" data-testid={`order-address-${order.id}`}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-slate-700">Customer Address</span>
+                  </div>
+                  <p className="text-sm text-slate-800 ml-6">{order.address || 'N/A'}</p>
+                  <p className="text-sm text-slate-500 ml-6">Postcode: {order.pin_code || 'N/A'}</p>
+                </div>
                 
                 <div className="border-t border-slate-200 pt-4 mb-4">
                   <h4 className="text-sm font-medium text-slate-700 mb-2">Order Items:</h4>
@@ -159,14 +263,32 @@ export const Admin = () => {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-slate-600 block">Pickup:</span>
-                    <span className="font-medium">{order.pickup_date} at {order.pickup_time}</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-3.5 w-3.5 text-blue-600" />
+                      <span className="text-blue-700 font-medium">Pickup</span>
+                    </div>
+                    <span className="block text-slate-800 font-medium">{order.pickup_date} at {order.pickup_time}</span>
+                    {order.pickup_instruction && (
+                      <div className="flex items-start gap-1.5 mt-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+                        <span className="text-slate-500 italic">{order.pickup_instruction}</span>
+                      </div>
+                    )}
                   </div>
-                  <div>
-                    <span className="text-slate-600 block">Delivery:</span>
-                    <span className="font-medium">{order.delivery_date} at {order.delivery_time}</span>
+                  <div className="bg-green-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-3.5 w-3.5 text-green-600" />
+                      <span className="text-green-700 font-medium">Delivery</span>
+                    </div>
+                    <span className="block text-slate-800 font-medium">{order.delivery_date} at {order.delivery_time}</span>
+                    {order.delivery_instruction && (
+                      <div className="flex items-start gap-1.5 mt-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+                        <span className="text-slate-500 italic">{order.delivery_instruction}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -233,6 +355,34 @@ export const Admin = () => {
 
           <TabsContent value="products" className="space-y-6" data-testid="products-tab-content">
             <ProductManagement />
+          </TabsContent>
+
+          <TabsContent value="categories" className="space-y-6" data-testid="categories-tab-content">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <h2 className="text-xl font-semibold mb-2 text-blue-600">Category Display Order</h2>
+              <p className="text-sm text-slate-500 mb-6">Drag and drop to reorder how categories appear on the storefront</p>
+              
+              {adminCategories.length > 0 ? (
+                <DndContext
+                  sensors={categorySensors}
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleCategoryDragEnd}
+                >
+                  <SortableContext
+                    items={adminCategories.map(c => c.name)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className="space-y-2">
+                      {adminCategories.map(cat => (
+                        <SortableCategoryItem key={cat.name} category={cat} />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              ) : (
+                <p className="text-center text-slate-500 py-8">No categories found. Add products to create categories.</p>
+              )}
+            </div>
           </TabsContent>
         </Tabs>
       </div>
