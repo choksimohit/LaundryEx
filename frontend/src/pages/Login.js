@@ -71,6 +71,11 @@ export const Login = () => {
                 className="h-12 rounded-xl mt-2"
                 data-testid="password-input"
               />
+              <div className="text-right mt-2">
+                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline" data-testid="forgot-password-link">
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
 
             <Button

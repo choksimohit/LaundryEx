@@ -459,3 +459,47 @@ async def send_admin_order_notification(order_data: Dict):
     except Exception as e:
         logger.error(f"Failed to send admin notification email: {str(e)}")
         return {"status": "error", "message": str(e)}
+
+
+def send_password_reset_email(to_email: str, name: str, reset_link: str):
+    """Send password reset email to user"""
+    html = f"""
+    <!DOCTYPE html>
+    <html>
+    <body style="margin:0; padding:0; font-family: Arial, sans-serif; background-color: #f1f5f9;">
+      <div style="max-width: 560px; margin: 40px auto; background: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);">
+        <div style="background: linear-gradient(135deg, #1e40af, #2563eb); padding: 32px; text-align: center;">
+          <h1 style="color: #ffffff; margin: 0; font-size: 24px;">Laundry Express</h1>
+          <p style="color: #bfdbfe; margin: 8px 0 0; font-size: 14px;">Password Reset Request</p>
+        </div>
+        <div style="padding: 32px;">
+          <p style="color: #334155; font-size: 16px; margin: 0 0 16px;">Hi {name},</p>
+          <p style="color: #64748b; font-size: 14px; line-height: 1.6; margin: 0 0 24px;">
+            We received a request to reset your password. Click the button below to create a new password. This link will expire in 1 hour.
+          </p>
+          <div style="text-align: center; margin: 32px 0;">
+            <a href="{reset_link}" style="display: inline-block; background: #2563eb; color: #ffffff; text-decoration: none; padding: 14px 40px; border-radius: 50px; font-weight: 600; font-size: 15px;">
+              Reset Password
+            </a>
+          </div>
+          <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 24px 0 0; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+            If you didn't request this, you can safely ignore this email. Your password will remain unchanged.
+          </p>
+        </div>
+      </div>
+    </body>
+    </html>
+    """
+    try:
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [to_email],
+            "subject": "Reset Your Password - Laundry Express",
+            "html": html
+        }
+        email = resend.Emails.send(params)
+        logger.info(f"Password reset email sent to {to_email}, email_id: {email.get('id')}")
+        return {"status": "success"}
+    except Exception as e:
+        logger.error(f"Failed to send password reset email: {str(e)}")
+        return {"status": "error", "message": str(e)}

@@ -209,6 +209,77 @@ async def login(credentials: UserLogin):
 async def get_me(current_user: dict = Depends(get_current_user)):
     return {"id": current_user["id"], "email": current_user["email"], "name": current_user["name"], "role": current_user["role"]}
 
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: dict):
+    email = data.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "If an account with that email exists, a reset link has been sent."}
+    
+    # Generate a reset token (JWT with short expiry)
+    reset_token = jwt.encode(
+        {"sub": user["id"], "email": email, "type": "reset", "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+        JWT_SECRET, algorithm=JWT_ALGORITHM
+    )
+    
+    # Store token in DB
+    await db.password_resets.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"user_id": user["id"], "token": reset_token, "created_at": datetime.now(timezone.utc).isoformat(), "used": False}},
+        upsert=True
+    )
+    
+    # Send reset email
+    frontend_url = os.environ.get("FRONTEND_URL", os.environ.get("REACT_APP_BACKEND_URL", "https://laundry-express.co.uk"))
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+    
+    try:
+        from email_service import send_password_reset_email
+        send_password_reset_email(email, user.get("name", "Customer"), reset_link)
+    except Exception as e:
+        logger.error(f"Failed to send reset email: {e}")
+    
+    return {"message": "If an account with that email exists, a reset link has been sent."}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: dict):
+    token = data.get("token", "")
+    new_password = data.get("password", "")
+    
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token and password are required")
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "reset":
+            raise HTTPException(status_code=400, detail="Invalid reset token")
+        user_id = payload.get("sub")
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    
+    # Check token hasn't been used
+    reset_record = await db.password_resets.find_one({"user_id": user_id, "token": token, "used": False}, {"_id": 0})
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="This reset link has already been used or is invalid")
+    
+    # Update password
+    hashed = hash_password(new_password)
+    result = await db.users.update_one({"id": user_id}, {"$set": {"password": hashed}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Mark token as used
+    await db.password_resets.update_one({"user_id": user_id, "token": token}, {"$set": {"used": True}})
+    
+    return {"message": "Password has been reset successfully"}
+
 @api_router.post("/pincode/check", response_model=PinCodeResponse)
 async def check_pincode(data: PinCodeCheck):
     businesses = await db.businesses.find(
