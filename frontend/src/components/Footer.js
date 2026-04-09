@@ -60,6 +60,11 @@ export const Footer = () => {
                   <span className="text-yellow-400">→</span> Order Now
                 </Link>
               </li>
+              <li>
+                <Link to="/sitemap" className="hover:text-yellow-400 transition-colors flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-yellow-400">→</span> Sitemap
+                </Link>
+              </li>
             </ul>
           </div>
 

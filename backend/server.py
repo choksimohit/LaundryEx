@@ -1,5 +1,6 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -563,6 +564,29 @@ async def reorder_products(data: dict, admin: dict = Depends(get_admin_user)):
             )
     
     return {"status": "success", "updated": len(updates)}
+
+@api_router.get("/sitemap-xml")
+async def sitemap_xml():
+    base_url = os.environ.get("BASE_URL", "https://laundry-express.co.uk")
+    pages = [
+        {"loc": "/", "priority": "1.0", "changefreq": "weekly"},
+        {"loc": "/services", "priority": "0.9", "changefreq": "weekly"},
+        {"loc": "/order", "priority": "0.9", "changefreq": "weekly"},
+        {"loc": "/login", "priority": "0.5", "changefreq": "monthly"},
+        {"loc": "/register", "priority": "0.5", "changefreq": "monthly"},
+        {"loc": "/sitemap", "priority": "0.3", "changefreq": "monthly"},
+    ]
+    urls = ""
+    for p in pages:
+        urls += f"""  <url>
+    <loc>{base_url}{p['loc']}</loc>
+    <changefreq>{p['changefreq']}</changefreq>
+    <priority>{p['priority']}</priority>
+  </url>\n"""
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls}</urlset>"""
+    return Response(content=xml, media_type="application/xml")
 
 app.include_router(api_router)
 

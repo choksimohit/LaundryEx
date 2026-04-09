@@ -13,6 +13,7 @@ import { Checkout } from './pages/Checkout';
 import { OrderConfirmation } from './pages/OrderConfirmation';
 import { Dashboard } from './pages/Dashboard';
 import { Admin } from './pages/Admin';
+import { Sitemap } from './pages/Sitemap';
 import { isAuthenticated, getUser } from './utils/auth';
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
@@ -65,6 +66,7 @@ function App() {
             <Route path="/order-confirmation/:orderId" element={<PrivateRoute><OrderConfirmation /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/admin" element={<PrivateRoute adminOnly><Admin /></PrivateRoute>} />
+            <Route path="/sitemap" element={<Sitemap />} />
           </Routes>
         </div>
         <Footer />
