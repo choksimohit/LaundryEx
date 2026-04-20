@@ -90,6 +90,18 @@ export const Landing = () => {
               </div>
             </div>
           </div>
+
+          <div className="mt-4 max-w-md" data-testid="closure-notice">
+            <div className="bg-red-600/90 backdrop-blur-sm rounded-lg p-4 shadow-lg border border-red-400/50">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl mt-0.5">&#9888;</span>
+                <div>
+                  <p className="text-sm sm:text-base font-bold text-white">Scheduled Maintenance Closure</p>
+                  <p className="text-xs sm:text-sm text-white/90 mt-1">We will be closed from <span className="font-bold">19th April</span> to <span className="font-bold">25th April 2026</span> for scheduled maintenance. Orders with pickup/delivery after 25th April will be accepted as normal.</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

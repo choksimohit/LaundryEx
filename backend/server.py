@@ -338,9 +338,13 @@ async def get_categories():
 
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
-    # Temporarily disabled for testing
-    # if order_data.total_amount < 30:
-    #     raise HTTPException(status_code=400, detail="Minimum order value is £30")
+    # Closure period validation: 19 Apr - 25 Apr 2026
+    closure_start = "2026-04-19"
+    closure_end = "2026-04-25"
+    if closure_start <= order_data.pickup_date <= closure_end:
+        raise HTTPException(status_code=400, detail="We are closed from 19th-25th April for scheduled maintenance. Please select a pickup date after 25th April.")
+    if closure_start <= order_data.delivery_date <= closure_end:
+        raise HTTPException(status_code=400, detail="We are closed from 19th-25th April for scheduled maintenance. Please select a delivery date after 25th April.")
     
     order_id = str(uuid.uuid4())
     

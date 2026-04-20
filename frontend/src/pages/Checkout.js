@@ -72,6 +72,18 @@ const CheckoutForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Closure dates: 19 Apr - 25 Apr 2026
+  const closureStart = '2026-04-19';
+  const closureEnd = '2026-04-25';
+
+  const isDateInClosure = (dateStr) => {
+    if (!dateStr) return false;
+    return dateStr >= closureStart && dateStr <= closureEnd;
+  };
+
+  const pickupInClosure = isDateInClosure(formData.pickup_date);
+  const deliveryInClosure = isDateInClosure(formData.delivery_date);
+
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
   const discount = promoApplied ? +(totalAmount * 0.10).toFixed(2) : 0;
   const afterDiscount = totalAmount - discount;
@@ -188,9 +200,14 @@ const CheckoutForm = () => {
                       value={formData.pickup_date}
                       onChange={handleChange}
                       required
-                      className="h-12 rounded-xl mt-2"
+                      className={`h-12 rounded-xl mt-2 ${pickupInClosure ? 'border-red-400 bg-red-50' : ''}`}
                       data-testid="pickup-date-input"
                     />
+                    {pickupInClosure && (
+                      <p className="text-red-600 text-sm mt-1 font-medium" data-testid="pickup-closure-warning">
+                        We are closed 19th-25th April for scheduled maintenance. Please select a date after 25th April.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="pickup_time">Collection Slot *</Label>
@@ -247,9 +264,14 @@ const CheckoutForm = () => {
                       value={formData.delivery_date}
                       onChange={handleChange}
                       required
-                      className="h-12 rounded-xl mt-2"
+                      className={`h-12 rounded-xl mt-2 ${deliveryInClosure ? 'border-red-400 bg-red-50' : ''}`}
                       data-testid="delivery-date-input"
                     />
+                    {deliveryInClosure && (
+                      <p className="text-red-600 text-sm mt-1 font-medium" data-testid="delivery-closure-warning">
+                        We are closed 19th-25th April for scheduled maintenance. Please select a date after 25th April.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="delivery_time">Delivery Slot *</Label>
@@ -405,7 +427,7 @@ const CheckoutForm = () => {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || pickupInClosure || deliveryInClosure}
                 className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all disabled:opacity-50"
                 data-testid="place-order-button"
               >
