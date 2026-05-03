@@ -221,10 +221,10 @@ export const Admin = () => {
 
         <Tabs defaultValue="orders" className="space-y-6">
           <TabsList className="bg-white rounded-full p-2 border border-slate-200">
-            <TabsTrigger value="orders" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-orders">Orders</TabsTrigger>
-            <TabsTrigger value="products" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-products">Products</TabsTrigger>
-            <TabsTrigger value="categories" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-categories">Categories</TabsTrigger>
-            <TabsTrigger value="businesses" className="rounded-full data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-businesses">Business Settings</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-orders">Orders</TabsTrigger>
+            <TabsTrigger value="products" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-products">Products</TabsTrigger>
+            <TabsTrigger value="categories" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-categories">Categories</TabsTrigger>
+            <TabsTrigger value="businesses" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-businesses">Business Settings</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="space-y-6" data-testid="orders-tab-content">
