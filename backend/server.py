@@ -14,6 +14,7 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import stripe
+import httpx
 from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification
 
 ROOT_DIR = Path(__file__).parent
@@ -655,6 +656,50 @@ async def rename_subcategory(data: dict, admin: dict = Depends(get_admin_user)):
     
     result = await db.products.update_many(query, {"$set": {"subcategory": new_name}})
     return {"status": "success", "updated": result.modified_count}
+
+INDEXNOW_KEY = "3e2b1635fee949728a88f3e88cff1780"
+
+@api_router.get("/indexnow-key")
+async def get_indexnow_key():
+    return Response(content=INDEXNOW_KEY, media_type="text/plain")
+
+@api_router.post("/admin/indexnow/submit")
+async def submit_indexnow(data: dict, admin: dict = Depends(get_admin_user)):
+    base_url = data.get("host", "https://laundry-express.co.uk")
+    urls = data.get("urls", [])
+    
+    if not urls:
+        # Default: submit all public pages
+        urls = [
+            f"{base_url}/",
+            f"{base_url}/services",
+            f"{base_url}/order",
+            f"{base_url}/login",
+            f"{base_url}/register",
+            f"{base_url}/sitemap",
+        ]
+    
+    payload = {
+        "host": base_url.replace("https://", "").replace("http://", ""),
+        "key": INDEXNOW_KEY,
+        "keyLocation": f"{base_url}/{INDEXNOW_KEY}.txt",
+        "urlList": urls
+    }
+    
+    results = {}
+    engines = [
+        ("Bing", "https://api.indexnow.org/IndexNow"),
+    ]
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        for name, endpoint in engines:
+            try:
+                resp = await client.post(endpoint, json=payload, headers={"Content-Type": "application/json"})
+                results[name] = {"status": resp.status_code, "ok": resp.status_code in [200, 202]}
+            except Exception as e:
+                results[name] = {"status": "error", "message": str(e)}
+    
+    return {"submitted_urls": len(urls), "results": results}
 
 @api_router.get("/sitemap-xml")
 async def sitemap_xml():
