@@ -640,6 +640,22 @@ async def reorder_products(data: dict, admin: dict = Depends(get_admin_user)):
     
     return {"status": "success", "updated": len(updates)}
 
+@api_router.post("/admin/subcategories/rename")
+async def rename_subcategory(data: dict, admin: dict = Depends(get_admin_user)):
+    old_name = data.get("old_name", "").strip()
+    new_name = data.get("new_name", "").strip()
+    category = data.get("category", "").strip()
+    
+    if not old_name or not new_name:
+        raise HTTPException(status_code=400, detail="Both old and new subcategory names are required")
+    
+    query = {"subcategory": old_name}
+    if category:
+        query["category"] = category
+    
+    result = await db.products.update_many(query, {"$set": {"subcategory": new_name}})
+    return {"status": "success", "updated": result.modified_count}
+
 @api_router.get("/sitemap-xml")
 async def sitemap_xml():
     base_url = os.environ.get("BASE_URL", "https://laundry-express.co.uk")

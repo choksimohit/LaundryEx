@@ -135,6 +135,8 @@ export const ProductManagement = () => {
   const [filterSubcategory, setFilterSubcategory] = useState('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
+  const [renamingGroup, setRenamingGroup] = useState(null);
+  const [renameValue, setRenameValue] = useState('');
 
   const [formData, setFormData] = useState({
     business_id: '',
@@ -274,6 +276,31 @@ export const ProductManagement = () => {
     } catch (error) {
       toast.error('Failed to update product order');
       loadData(); // Reload on error
+    }
+  };
+
+  const handleRenameSubcategory = async (groupKey) => {
+    if (!renameValue.trim()) {
+      toast.error('Subcategory name cannot be empty');
+      return;
+    }
+    // Parse category and subcategory from groupKey "Category > Subcategory"
+    const parts = groupKey.split(' > ');
+    const category = parts[0];
+    const oldSubcategory = parts[1] || '';
+
+    try {
+      await api.post('/admin/subcategories/rename', {
+        old_name: oldSubcategory,
+        new_name: renameValue.trim(),
+        category: category,
+      });
+      toast.success(`Subcategory renamed to "${renameValue.trim()}"`);
+      setRenamingGroup(null);
+      setRenameValue('');
+      loadData();
+    } catch (error) {
+      toast.error('Failed to rename subcategory');
     }
   };
 
@@ -495,8 +522,39 @@ export const ProductManagement = () => {
         {Object.entries(groupedProducts).map(([groupKey, groupProducts]) => (
           <div key={groupKey} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
             <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-              <h3 className="font-semibold text-lg text-blue-600">{groupKey}</h3>
-              <p className="text-sm text-slate-600">{groupProducts.length} product(s) - Drag to reorder within this group</p>
+              {renamingGroup === groupKey ? (
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={renameValue}
+                    onChange={(e) => setRenameValue(e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleRenameSubcategory(groupKey); if (e.key === 'Escape') { setRenamingGroup(null); setRenameValue(''); } }}
+                    className="h-9 text-sm max-w-xs"
+                    autoFocus
+                    data-testid={`rename-subcategory-input`}
+                  />
+                  <Button size="sm" onClick={() => handleRenameSubcategory(groupKey)} className="bg-blue-600 hover:bg-blue-700 text-white h-9 px-3 text-xs" data-testid="rename-subcategory-save">Save</Button>
+                  <Button size="sm" variant="outline" onClick={() => { setRenamingGroup(null); setRenameValue(''); }} className="h-9 px-3 text-xs">Cancel</Button>
+                </div>
+              ) : (
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-semibold text-lg text-blue-600">{groupKey}</h3>
+                    <p className="text-sm text-slate-600">{groupProducts.length} product(s) - Drag to reorder within this group</p>
+                  </div>
+                  {groupKey.includes(' > ') && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => { setRenamingGroup(groupKey); setRenameValue(groupKey.split(' > ')[1] || ''); }}
+                      className="text-slate-500 hover:text-blue-600 h-8 px-2"
+                      data-testid={`rename-subcategory-${groupKey}`}
+                    >
+                      <Pencil className="h-3.5 w-3.5 mr-1" />
+                      <span className="text-xs">Rename</span>
+                    </Button>
+                  )}
+                </div>
+              )}
             </div>
 
             <DndContext
