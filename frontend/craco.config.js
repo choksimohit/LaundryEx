@@ -1,5 +1,7 @@
 // craco.config.js
 const path = require("path");
+const CssMinimizerPlugin = require("css-minimizer-webpack-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 require("dotenv").config();
 
 // Environment variable overrides
@@ -35,6 +37,33 @@ const webpackConfig = {
       '@': path.resolve(__dirname, 'src'),
     },
     configure: (webpackConfig) => {
+
+      // Production minification
+      if (webpackConfig.mode === 'production') {
+        webpackConfig.optimization = {
+          ...webpackConfig.optimization,
+          minimize: true,
+          minimizer: [
+            new TerserPlugin({
+              terserOptions: {
+                parse: { ecma: 8 },
+                compress: { ecma: 5, warnings: false, comparisons: false, inline: 2, drop_console: true },
+                mangle: { safari10: true },
+                output: { ecma: 5, comments: false, ascii_only: true },
+              },
+            }),
+            new CssMinimizerPlugin({
+              minimizerOptions: {
+                preset: ['default', { discardComments: { removeAll: true }, minifyFontValues: { removeQuotes: false } }],
+              },
+            }),
+          ],
+          splitChunks: {
+            chunks: 'all',
+            maxSize: 244000,
+          },
+        };
+      }
 
       // Disable hot reload completely if environment variable is set
       if (config.disableHotReload) {
