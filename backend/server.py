@@ -339,6 +339,11 @@ async def get_categories():
     product_categories.sort(key=lambda c: (c["sort_order"], c["name"]))
     return product_categories
 
+@api_router.get("/subcategories-order")
+async def get_subcategories_order():
+    subcat_docs = await db.subcategories.find({}, {"_id": 0}).to_list(500)
+    return subcat_docs
+
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
     # Closure period validation: 19 Apr - 25 Apr 2026
@@ -612,6 +617,46 @@ async def get_admin_categories(admin: dict = Depends(get_admin_user)):
     
     product_categories.sort(key=lambda c: (c["sort_order"], c["name"]))
     return product_categories
+
+@api_router.get("/admin/subcategories")
+async def get_admin_subcategories(admin: dict = Depends(get_admin_user)):
+    # Get distinct category+subcategory combos from products
+    pipeline = [
+        {"$match": {"subcategory": {"$nin": [None, ""]}}},
+        {"$group": {"_id": {"category": "$category", "subcategory": "$subcategory"}}},
+        {"$project": {"_id": 0, "category": "$_id.category", "name": "$_id.subcategory"}}
+    ]
+    product_subcats = await db.products.aggregate(pipeline).to_list(500)
+    
+    # Get sort order from subcategories collection
+    saved_orders = {}
+    subcat_docs = await db.subcategories.find({}, {"_id": 0}).to_list(500)
+    for doc in subcat_docs:
+        key = f"{doc['category']}|{doc['name']}"
+        saved_orders[key] = doc.get("sort_order", 999)
+    
+    for sc in product_subcats:
+        key = f"{sc['category']}|{sc['name']}"
+        sc["sort_order"] = saved_orders.get(key, 999)
+    
+    # Sort by category then sort_order
+    product_subcats.sort(key=lambda s: (s["category"], s["sort_order"], s["name"]))
+    return product_subcats
+
+@api_router.post("/admin/subcategories/reorder")
+async def reorder_subcategories(data: dict, admin: dict = Depends(get_admin_user)):
+    updates = data.get("updates", [])
+    for update in updates:
+        name = update.get("name")
+        category = update.get("category")
+        sort_order = update.get("sort_order")
+        if name and category and sort_order is not None:
+            await db.subcategories.update_one(
+                {"name": name, "category": category},
+                {"$set": {"name": name, "category": category, "sort_order": sort_order}},
+                upsert=True
+            )
+    return {"status": "success", "updated": len(updates)}
 
 @api_router.post("/admin/categories/reorder")
 async def reorder_categories(data: dict, admin: dict = Depends(get_admin_user)):

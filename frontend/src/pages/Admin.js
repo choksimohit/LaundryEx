@@ -68,11 +68,48 @@ const SortableCategoryItem = ({ category }) => {
   );
 };
 
+const SortableSubcategoryItem = ({ subcat }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: `${subcat.category}|${subcat.name}` });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-center gap-3 bg-white rounded-lg p-3 border border-slate-200 hover:border-blue-300 transition-colors"
+      data-testid={`sortable-subcat-${subcat.name}`}
+    >
+      <div
+        {...attributes}
+        {...listeners}
+        className="cursor-grab active:cursor-grabbing touch-none"
+      >
+        <GripVertical className="h-4 w-4 text-slate-400" />
+      </div>
+      <span className="text-sm font-medium text-slate-700 flex-1">{subcat.name}</span>
+      <span className="text-xs text-slate-400">#{subcat.sort_order + 1}</span>
+    </div>
+  );
+};
+
 export const Admin = () => {
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
   const [business, setBusiness] = useState(null);
   const [adminCategories, setAdminCategories] = useState([]);
+  const [adminSubcategories, setAdminSubcategories] = useState([]);
   const [editingBusiness, setEditingBusiness] = useState(false);
   const [businessForm, setBusinessForm] = useState({ name: '', owner_email: '', pin_codes: '' });
   const user = getUser();
@@ -89,6 +126,7 @@ export const Admin = () => {
     loadOrders();
     loadBusiness();
     loadAdminCategories();
+    loadAdminSubcategories();
   }, []);
 
   const loadStats = async () => {
@@ -161,6 +199,15 @@ export const Admin = () => {
     }
   };
 
+  const loadAdminSubcategories = async () => {
+    try {
+      const response = await api.get('/admin/subcategories');
+      setAdminSubcategories(response.data);
+    } catch (error) {
+      toast.error('Failed to load subcategories');
+    }
+  };
+
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await api.patch(`/admin/orders/${orderId}/status`, { status: newStatus });
@@ -190,6 +237,33 @@ export const Admin = () => {
     } catch (error) {
       toast.error('Failed to update category order');
       loadAdminCategories();
+    }
+  };
+
+  const handleSubcategoryDragEnd = async (categoryName, event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const catSubcats = adminSubcategories.filter(sc => sc.category === categoryName);
+    const oldIndex = catSubcats.findIndex(sc => `${sc.category}|${sc.name}` === active.id);
+    const newIndex = catSubcats.findIndex(sc => `${sc.category}|${sc.name}` === over.id);
+    const reordered = arrayMove(catSubcats, oldIndex, newIndex);
+    const updated = reordered.map((sc, i) => ({ ...sc, sort_order: i }));
+
+    // Update local state
+    setAdminSubcategories(prev => [
+      ...prev.filter(sc => sc.category !== categoryName),
+      ...updated
+    ].sort((a, b) => a.category.localeCompare(b.category) || a.sort_order - b.sort_order));
+
+    try {
+      await api.post('/admin/subcategories/reorder', {
+        updates: updated.map((sc, i) => ({ name: sc.name, category: sc.category, sort_order: i }))
+      });
+      toast.success('Subcategory order updated');
+    } catch (error) {
+      toast.error('Failed to update subcategory order');
+      loadAdminSubcategories();
     }
   };
 
@@ -459,6 +533,43 @@ export const Admin = () => {
                 </DndContext>
               ) : (
                 <p className="text-center text-slate-500 py-8">No categories found. Add products to create categories.</p>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <h2 className="text-xl font-semibold mb-2 text-blue-600">Subcategory Display Order</h2>
+              <p className="text-sm text-slate-500 mb-6">Drag and drop to reorder subcategories within each category</p>
+              
+              {adminCategories.length > 0 ? (
+                <div className="space-y-6">
+                  {adminCategories.map(cat => {
+                    const catSubcats = adminSubcategories.filter(sc => sc.category === cat.name);
+                    if (catSubcats.length === 0) return null;
+                    return (
+                      <div key={cat.name} data-testid={`subcat-group-${cat.name}`}>
+                        <h3 className="text-base font-semibold text-slate-700 mb-3 border-b border-slate-100 pb-2">{cat.name}</h3>
+                        <DndContext
+                          sensors={categorySensors}
+                          collisionDetection={closestCenter}
+                          onDragEnd={(event) => handleSubcategoryDragEnd(cat.name, event)}
+                        >
+                          <SortableContext
+                            items={catSubcats.map(sc => `${sc.category}|${sc.name}`)}
+                            strategy={verticalListSortingStrategy}
+                          >
+                            <div className="space-y-2 ml-2">
+                              {catSubcats.map(sc => (
+                                <SortableSubcategoryItem key={`${sc.category}|${sc.name}`} subcat={sc} />
+                              ))}
+                            </div>
+                          </SortableContext>
+                        </DndContext>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="text-center text-slate-500 py-8">No subcategories found.</p>
               )}
             </div>
           </TabsContent>
