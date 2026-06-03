@@ -706,6 +706,28 @@ async def rename_subcategory(data: dict, admin: dict = Depends(get_admin_user)):
 
 INDEXNOW_KEY = "3e2b1635fee949728a88f3e88cff1780"
 
+@api_router.get("/admin/backup")
+async def download_backup(admin: dict = Depends(get_admin_user)):
+    import json as json_module
+    collections_to_backup = ["users", "products", "orders", "categories", "subcategories", "businesses", "password_resets"]
+    backup = {}
+    for col_name in collections_to_backup:
+        docs = await db[col_name].find({}, {"_id": 0}).to_list(10000)
+        backup[col_name] = docs
+    
+    backup["_meta"] = {
+        "exported_at": datetime.now(timezone.utc).isoformat(),
+        "collections": list(backup.keys()),
+        "total_documents": sum(len(v) for k, v in backup.items() if k != "_meta")
+    }
+    
+    json_str = json_module.dumps(backup, indent=2, default=str)
+    return Response(
+        content=json_str,
+        media_type="application/json",
+        headers={"Content-Disposition": f"attachment; filename=laundry-express-backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}.json"}
+    )
+
 @api_router.get("/indexnow-key")
 async def get_indexnow_key():
     return Response(content=INDEXNOW_KEY, media_type="text/plain")

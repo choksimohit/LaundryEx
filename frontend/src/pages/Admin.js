@@ -14,7 +14,7 @@ import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
 import { getUser } from '../utils/auth';
-import { GripVertical, MapPin, Clock, MessageSquare } from 'lucide-react';
+import { GripVertical, MapPin, Clock, MessageSquare, Download } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -187,6 +187,24 @@ export const Admin = () => {
       loadStats();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to update business');
+    }
+  };
+
+  const handleDownloadBackup = async () => {
+    try {
+      toast.info('Generating backup...');
+      const response = await api.get('/admin/backup', { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `laundry-express-backup-${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Backup downloaded successfully');
+    } catch (error) {
+      toast.error('Failed to download backup');
     }
   };
 
@@ -503,6 +521,23 @@ export const Admin = () => {
                 <p className="text-slate-500">No business configured</p>
               </div>
             )}
+
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-xl font-semibold text-blue-600">Database Backup</h2>
+                  <p className="text-sm text-slate-500 mt-1">Download a full backup of all your data (orders, products, customers, settings)</p>
+                </div>
+                <Button
+                  onClick={handleDownloadBackup}
+                  className="rounded-full bg-slate-800 hover:bg-slate-900"
+                  data-testid="download-backup-button"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Download Backup
+                </Button>
+              </div>
+            </div>
           </TabsContent>
 
           <TabsContent value="products" className="space-y-6" data-testid="products-tab-content">
