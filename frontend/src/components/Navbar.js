@@ -31,9 +31,9 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center text-sm">
             <div className="flex items-center gap-6">
-              <a href="tel:+447777367078" className="flex items-center gap-2 hover:text-blue-200">
+              <a href="tel:+447777367076" className="flex items-center gap-2 hover:text-blue-200">
                 <Phone className="h-4 w-4" />
-                +44 7777 367078
+                +44 7777 367076
               </a>
               <a href="mailto:support@laundry-express.co.uk" className="flex items-center gap-2 hover:text-blue-200">
                 <Mail className="h-4 w-4" />
@@ -59,10 +59,12 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
           <div className="flex justify-between items-center h-16 md:h-20">
             {/* Logo */}
             <Link to="/" className="flex items-center" data-testid="logo-link">
-              <div className="flex flex-col">
-                <h1 className="text-xl md:text-2xl font-bold text-blue-600">Laundry Express</h1>
-                <p className="text-xs text-slate-500 hidden sm:block">Fresh Clothes, Excellent Care</p>
-              </div>
+              <img
+                src="https://customer-assets.emergentagent.com/job_96f0f817-9721-4547-9435-ea1d85c690c7/artifacts/j46z69e3_LAUNDRY%20EXPRESS%20logo%20%281%29.png"
+                alt="Laundry Express"
+                className="h-12 md:h-16 w-auto"
+                data-testid="logo-image"
+              />
             </Link>
 
             {/* Desktop Navigation */}

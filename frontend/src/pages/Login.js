@@ -25,7 +25,8 @@ export const Login = () => {
       if (response.data.user.role.includes('admin')) {
         navigate('/admin');
       } else {
-        navigate('/services');
+        const cart = JSON.parse(localStorage.getItem('cart') || '[]');
+        navigate(cart.length > 0 ? '/cart' : '/services');
       }
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Login failed');
@@ -70,6 +71,11 @@ export const Login = () => {
                 className="h-12 rounded-xl mt-2"
                 data-testid="password-input"
               />
+              <div className="text-right mt-2">
+                <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline" data-testid="forgot-password-link">
+                  Forgot Password?
+                </Link>
+              </div>
             </div>
 
             <Button

@@ -1,7 +1,9 @@
 from fastapi import FastAPI, APIRouter, HTTPException, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.responses import Response
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
 import os
 import logging
@@ -13,6 +15,7 @@ from datetime import datetime, timezone, timedelta
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 import stripe
+import httpx
 from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification
 
 ROOT_DIR = Path(__file__).parent
@@ -30,6 +33,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
 
 app = FastAPI()
+app.add_middleware(GZipMiddleware, minimum_size=500)
 api_router = APIRouter(prefix="/api")
 
 class UserRegister(BaseModel):
@@ -95,6 +99,10 @@ class OrderCreate(BaseModel):
     pin_code: str
     payment_method: str
     total_amount: float
+    delivery_charge: Optional[float] = 0
+    customer_note: Optional[str] = ""
+    promo_code: Optional[str] = ""
+    discount_amount: Optional[float] = 0
 
 class Order(BaseModel):
     model_config = ConfigDict(extra="ignore")
@@ -204,6 +212,77 @@ async def login(credentials: UserLogin):
 async def get_me(current_user: dict = Depends(get_current_user)):
     return {"id": current_user["id"], "email": current_user["email"], "name": current_user["name"], "role": current_user["role"]}
 
+@api_router.post("/auth/forgot-password")
+async def forgot_password(data: dict):
+    email = data.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    
+    user = await db.users.find_one({"email": email}, {"_id": 0})
+    if not user:
+        # Don't reveal if email exists
+        return {"message": "If an account with that email exists, a reset link has been sent."}
+    
+    # Generate a reset token (JWT with short expiry)
+    reset_token = jwt.encode(
+        {"sub": user["id"], "email": email, "type": "reset", "exp": datetime.now(timezone.utc) + timedelta(hours=1)},
+        JWT_SECRET, algorithm=JWT_ALGORITHM
+    )
+    
+    # Store token in DB
+    await db.password_resets.update_one(
+        {"user_id": user["id"]},
+        {"$set": {"user_id": user["id"], "token": reset_token, "created_at": datetime.now(timezone.utc).isoformat(), "used": False}},
+        upsert=True
+    )
+    
+    # Send reset email
+    frontend_url = os.environ.get("FRONTEND_URL", os.environ.get("REACT_APP_BACKEND_URL", "https://laundry-express.co.uk"))
+    reset_link = f"{frontend_url}/reset-password?token={reset_token}"
+    
+    try:
+        from email_service import send_password_reset_email
+        send_password_reset_email(email, user.get("name", "Customer"), reset_link)
+    except Exception as e:
+        logger.error(f"Failed to send reset email: {e}")
+    
+    return {"message": "If an account with that email exists, a reset link has been sent."}
+
+@api_router.post("/auth/reset-password")
+async def reset_password(data: dict):
+    token = data.get("token", "")
+    new_password = data.get("password", "")
+    
+    if not token or not new_password:
+        raise HTTPException(status_code=400, detail="Token and password are required")
+    
+    if len(new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+    
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        if payload.get("type") != "reset":
+            raise HTTPException(status_code=400, detail="Invalid reset token")
+        user_id = payload.get("sub")
+    except JWTError:
+        raise HTTPException(status_code=400, detail="Invalid or expired reset link")
+    
+    # Check token hasn't been used
+    reset_record = await db.password_resets.find_one({"user_id": user_id, "token": token, "used": False}, {"_id": 0})
+    if not reset_record:
+        raise HTTPException(status_code=400, detail="This reset link has already been used or is invalid")
+    
+    # Update password
+    hashed = hash_password(new_password)
+    result = await db.users.update_one({"id": user_id}, {"$set": {"password": hashed}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Mark token as used
+    await db.password_resets.update_one({"user_id": user_id, "token": token}, {"$set": {"used": True}})
+    
+    return {"message": "Password has been reset successfully"}
+
 @api_router.post("/pincode/check", response_model=PinCodeResponse)
 async def check_pincode(data: PinCodeCheck):
     businesses = await db.businesses.find(
@@ -240,25 +319,51 @@ async def get_service_types():
 
 @api_router.get("/categories")
 async def get_categories():
+    # Get distinct categories from products
     pipeline = [
         {"$group": {"_id": "$category"}},
-        {"$sort": {"_id": 1}},
         {"$project": {"_id": 0, "name": "$_id"}}
     ]
-    categories = await db.products.aggregate(pipeline).to_list(100)
-    return categories
+    product_categories = await db.products.aggregate(pipeline).to_list(100)
+    
+    # Get sort order from categories collection
+    saved_orders = {}
+    cat_docs = await db.categories.find({}, {"_id": 0}).to_list(100)
+    for doc in cat_docs:
+        saved_orders[doc["name"]] = doc.get("sort_order", 999)
+    
+    # Merge: use saved sort_order if available, otherwise alphabetical at end
+    for cat in product_categories:
+        cat["sort_order"] = saved_orders.get(cat["name"], 999)
+    
+    product_categories.sort(key=lambda c: (c["sort_order"], c["name"]))
+    return product_categories
 
 @api_router.post("/orders")
 async def create_order(order_data: OrderCreate, current_user: dict = Depends(get_current_user)):
-    # Temporarily disabled for testing
-    # if order_data.total_amount < 30:
-    #     raise HTTPException(status_code=400, detail="Minimum order value is £30")
+    # Closure period validation: 19 Apr - 25 Apr 2026
+    closure_start = "2026-04-19"
+    closure_end = "2026-04-25"
+    if closure_start <= order_data.pickup_date <= closure_end:
+        raise HTTPException(status_code=400, detail="We are closed from 19th-25th April for scheduled maintenance. Please select a pickup date after 25th April.")
+    if closure_start <= order_data.delivery_date <= closure_end:
+        raise HTTPException(status_code=400, detail="We are closed from 19th-25th April for scheduled maintenance. Please select a delivery date after 25th April.")
     
     order_id = str(uuid.uuid4())
     
     # Generate 6-digit numeric order number
     last_order = await db.orders.find({}, {"_id": 0, "order_number": 1}).sort("order_number", -1).limit(1).to_list(1)
     order_number = (last_order[0]["order_number"] + 1) if last_order and "order_number" in last_order[0] else 100000
+    
+    # Calculate delivery charge server-side
+    items_total = sum(item.price * item.quantity for item in order_data.items)
+    discount = 0
+    promo_code = order_data.promo_code.strip().upper() if order_data.promo_code else ""
+    if promo_code == "WELCOME10":
+        discount = round(items_total * 0.10, 2)
+    after_discount = items_total - discount
+    delivery_charge = 0 if after_discount >= 30 else 4.45
+    total_with_delivery = after_discount + delivery_charge
     
     order_doc = {
         "id": order_id,
@@ -277,7 +382,12 @@ async def create_order(order_data: OrderCreate, current_user: dict = Depends(get
         "pin_code": order_data.pin_code,
         "payment_method": order_data.payment_method,
         "payment_status": "pending" if order_data.payment_method == "stripe" else "cod",
-        "total_amount": order_data.total_amount,
+        "items_total": items_total,
+        "promo_code": promo_code,
+        "discount_amount": discount,
+        "delivery_charge": delivery_charge,
+        "total_amount": total_with_delivery,
+        "customer_note": order_data.customer_note,
         "status": "pending",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -370,6 +480,20 @@ async def create_business(business_data: BusinessCreate, admin: dict = Depends(g
     }
     await db.businesses.insert_one(business_doc)
     return {"business_id": business_id, "status": "success"}
+
+@api_router.put("/admin/businesses/{business_id}")
+async def update_business(business_id: str, business_data: BusinessCreate, admin: dict = Depends(get_admin_user)):
+    result = await db.businesses.update_one(
+        {"id": business_id},
+        {"$set": {
+            "name": business_data.name,
+            "owner_email": business_data.owner_email,
+            "pin_codes": business_data.pin_codes,
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Business not found")
+    return {"status": "success"}
 
 @api_router.get("/admin/products")
 async def get_admin_products(admin: dict = Depends(get_admin_user)):
@@ -468,6 +592,41 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
         "total_products": total_products
     }
 
+@api_router.get("/admin/categories")
+async def get_admin_categories(admin: dict = Depends(get_admin_user)):
+    # Get distinct categories from products
+    pipeline = [
+        {"$group": {"_id": "$category"}},
+        {"$project": {"_id": 0, "name": "$_id"}}
+    ]
+    product_categories = await db.products.aggregate(pipeline).to_list(100)
+    
+    # Get sort order from categories collection
+    saved_orders = {}
+    cat_docs = await db.categories.find({}, {"_id": 0}).to_list(100)
+    for doc in cat_docs:
+        saved_orders[doc["name"]] = doc.get("sort_order", 999)
+    
+    for cat in product_categories:
+        cat["sort_order"] = saved_orders.get(cat["name"], 999)
+    
+    product_categories.sort(key=lambda c: (c["sort_order"], c["name"]))
+    return product_categories
+
+@api_router.post("/admin/categories/reorder")
+async def reorder_categories(data: dict, admin: dict = Depends(get_admin_user)):
+    updates = data.get("updates", [])
+    for update in updates:
+        name = update.get("name")
+        sort_order = update.get("sort_order")
+        if name and sort_order is not None:
+            await db.categories.update_one(
+                {"name": name},
+                {"$set": {"name": name, "sort_order": sort_order}},
+                upsert=True
+            )
+    return {"status": "success", "updated": len(updates)}
+
 @api_router.post("/admin/products/reorder")
 async def reorder_products(data: dict, admin: dict = Depends(get_admin_user)):
     updates = data.get("updates", [])
@@ -483,6 +642,89 @@ async def reorder_products(data: dict, admin: dict = Depends(get_admin_user)):
             )
     
     return {"status": "success", "updated": len(updates)}
+
+@api_router.post("/admin/subcategories/rename")
+async def rename_subcategory(data: dict, admin: dict = Depends(get_admin_user)):
+    old_name = data.get("old_name", "").strip()
+    new_name = data.get("new_name", "").strip()
+    category = data.get("category", "").strip()
+    
+    if not old_name or not new_name:
+        raise HTTPException(status_code=400, detail="Both old and new subcategory names are required")
+    
+    query = {"subcategory": old_name}
+    if category:
+        query["category"] = category
+    
+    result = await db.products.update_many(query, {"$set": {"subcategory": new_name}})
+    return {"status": "success", "updated": result.modified_count}
+
+INDEXNOW_KEY = "3e2b1635fee949728a88f3e88cff1780"
+
+@api_router.get("/indexnow-key")
+async def get_indexnow_key():
+    return Response(content=INDEXNOW_KEY, media_type="text/plain")
+
+@api_router.post("/admin/indexnow/submit")
+async def submit_indexnow(data: dict, admin: dict = Depends(get_admin_user)):
+    base_url = data.get("host", "https://laundry-express.co.uk")
+    urls = data.get("urls", [])
+    
+    if not urls:
+        # Default: submit all public pages
+        urls = [
+            f"{base_url}/",
+            f"{base_url}/services",
+            f"{base_url}/order",
+            f"{base_url}/login",
+            f"{base_url}/register",
+            f"{base_url}/sitemap",
+        ]
+    
+    payload = {
+        "host": base_url.replace("https://", "").replace("http://", ""),
+        "key": INDEXNOW_KEY,
+        "keyLocation": f"{base_url}/{INDEXNOW_KEY}.txt",
+        "urlList": urls
+    }
+    
+    results = {}
+    engines = [
+        ("Bing", "https://api.indexnow.org/IndexNow"),
+    ]
+    
+    async with httpx.AsyncClient(timeout=15) as client:
+        for name, endpoint in engines:
+            try:
+                resp = await client.post(endpoint, json=payload, headers={"Content-Type": "application/json"})
+                results[name] = {"status": resp.status_code, "ok": resp.status_code in [200, 202]}
+            except Exception as e:
+                results[name] = {"status": "error", "message": str(e)}
+    
+    return {"submitted_urls": len(urls), "results": results}
+
+@api_router.get("/sitemap-xml")
+async def sitemap_xml():
+    base_url = os.environ.get("BASE_URL", "https://laundry-express.co.uk")
+    pages = [
+        {"loc": "/", "priority": "1.0", "changefreq": "weekly"},
+        {"loc": "/services", "priority": "0.9", "changefreq": "weekly"},
+        {"loc": "/order", "priority": "0.9", "changefreq": "weekly"},
+        {"loc": "/login", "priority": "0.5", "changefreq": "monthly"},
+        {"loc": "/register", "priority": "0.5", "changefreq": "monthly"},
+        {"loc": "/sitemap", "priority": "0.3", "changefreq": "monthly"},
+    ]
+    urls = ""
+    for p in pages:
+        urls += f"""  <url>
+    <loc>{base_url}{p['loc']}</loc>
+    <changefreq>{p['changefreq']}</changefreq>
+    <priority>{p['priority']}</priority>
+  </url>\n"""
+    xml = f"""<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+{urls}</urlset>"""
+    return Response(content=xml, media_type="application/xml")
 
 app.include_router(api_router)
 

@@ -48,11 +48,11 @@ export const Landing = () => {
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-20 md:py-32">
         <div className="max-w-3xl">
           <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight leading-tight mb-4 md:mb-6 text-white" data-testid="hero-title">
-            Premium Laundry &
+            Colchester's Premium
             <br />
-            Dry Cleaning in
+            Doorstep Laundry &
             <br />
-            Colchester
+            Dry Cleaning
           </h1>
 
           <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-lg p-4 sm:p-6 shadow-2xl mt-6 md:mt-8 max-w-md" data-testid="pincode-checker">
@@ -78,11 +78,23 @@ export const Landing = () => {
               </Button>
             </div>
           </div>
+
+          <div className="mt-5 max-w-md animate-pulse-slow" data-testid="offer-banner">
+            <div className="bg-gradient-to-r from-yellow-400 to-amber-500 rounded-lg p-4 shadow-lg border border-yellow-300/50">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl sm:text-4xl font-black text-white drop-shadow-md">10% OFF</span>
+                <div className="border-l-2 border-white/40 pl-3">
+                  <p className="text-sm sm:text-base font-bold text-white">On Your First Order!</p>
+                  <p className="text-xs text-white/90">Use code <span className="font-bold bg-white/20 px-1.5 py-0.5 rounded">WELCOME10</span> at checkout</p>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <a
-        href="https://wa.me/447777367078"
+        href="https://wa.me/447777367076"
         target="_blank"
         rel="noopener noreferrer"
         className="fixed bottom-8 right-8 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-2xl z-50 flex items-center gap-2"

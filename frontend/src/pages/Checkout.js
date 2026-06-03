@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Calendar, Clock, MapPin, CreditCard } from 'lucide-react';
+import { Calendar, Clock, MapPin, CreditCard, MessageSquare } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
@@ -33,8 +33,12 @@ const CheckoutForm = () => {
     address: '',
     pin_code: '',
     payment_method: 'cod',
+    customer_note: '',
   });
   const [loading, setLoading] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoApplied, setPromoApplied] = useState(false);
+  const [promoError, setPromoError] = useState('');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -68,7 +72,40 @@ const CheckoutForm = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // Closure dates: 19 Apr - 25 Apr 2026
+  const closureStart = '2026-04-19';
+  const closureEnd = '2026-04-25';
+
+  const isDateInClosure = (dateStr) => {
+    if (!dateStr) return false;
+    return dateStr >= closureStart && dateStr <= closureEnd;
+  };
+
+  const pickupInClosure = isDateInClosure(formData.pickup_date);
+  const deliveryInClosure = isDateInClosure(formData.delivery_date);
+
   const totalAmount = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const discount = promoApplied ? +(totalAmount * 0.10).toFixed(2) : 0;
+  const afterDiscount = totalAmount - discount;
+  const deliveryCharge = afterDiscount >= 30 ? 0 : 4.45;
+  const grandTotal = afterDiscount + deliveryCharge;
+
+  const applyPromoCode = () => {
+    if (promoCode.trim().toUpperCase() === 'WELCOME10') {
+      setPromoApplied(true);
+      setPromoError('');
+      toast.success('Promo code applied! 10% off your order.');
+    } else {
+      setPromoApplied(false);
+      setPromoError('Invalid promo code');
+    }
+  };
+
+  const removePromoCode = () => {
+    setPromoCode('');
+    setPromoApplied(false);
+    setPromoError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -78,7 +115,10 @@ const CheckoutForm = () => {
       const orderData = {
         items: cart,
         ...formData,
-        total_amount: totalAmount,
+        total_amount: grandTotal,
+        delivery_charge: deliveryCharge,
+        promo_code: promoApplied ? 'WELCOME10' : '',
+        discount_amount: discount,
       };
 
       // Handle Stripe payment
@@ -91,7 +131,7 @@ const CheckoutForm = () => {
 
         // Create payment intent
         const intentResponse = await api.post('/payment/create-intent', {
-          amount: totalAmount,
+          amount: grandTotal,
           order_id: 'temp_' + Date.now()
         });
 
@@ -160,9 +200,14 @@ const CheckoutForm = () => {
                       value={formData.pickup_date}
                       onChange={handleChange}
                       required
-                      className="h-12 rounded-xl mt-2"
+                      className={`h-12 rounded-xl mt-2 ${pickupInClosure ? 'border-red-400 bg-red-50' : ''}`}
                       data-testid="pickup-date-input"
                     />
+                    {pickupInClosure && (
+                      <p className="text-red-600 text-sm mt-1 font-medium" data-testid="pickup-closure-warning">
+                        We are closed 19th-25th April for scheduled maintenance. Please select a date after 25th April.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="pickup_time">Collection Slot *</Label>
@@ -219,9 +264,14 @@ const CheckoutForm = () => {
                       value={formData.delivery_date}
                       onChange={handleChange}
                       required
-                      className="h-12 rounded-xl mt-2"
+                      className={`h-12 rounded-xl mt-2 ${deliveryInClosure ? 'border-red-400 bg-red-50' : ''}`}
                       data-testid="delivery-date-input"
                     />
+                    {deliveryInClosure && (
+                      <p className="text-red-600 text-sm mt-1 font-medium" data-testid="delivery-closure-warning">
+                        We are closed 19th-25th April for scheduled maintenance. Please select a date after 25th April.
+                      </p>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="delivery_time">Delivery Slot *</Label>
@@ -301,6 +351,26 @@ const CheckoutForm = () => {
 
               <div className="bg-white rounded-2xl p-6 border border-slate-200">
                 <div className="flex items-center gap-2 mb-6">
+                  <MessageSquare className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-xl font-semibold">Additional Notes</h2>
+                </div>
+                <div>
+                  <Label htmlFor="customer_note">Any special instructions? (Optional)</Label>
+                  <textarea
+                    id="customer_note"
+                    name="customer_note"
+                    placeholder="E.g. stain on collar of blue shirt, handle with care, use fragrance-free detergent..."
+                    value={formData.customer_note}
+                    onChange={handleChange}
+                    rows={3}
+                    className="w-full mt-2 px-3 py-2 border border-slate-200 rounded-xl text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    data-testid="customer-note-input"
+                  />
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-6 border border-slate-200">
+                <div className="flex items-center gap-2 mb-6">
                   <CreditCard className="h-5 w-5 text-blue-600" />
                   <h2 className="text-xl font-semibold">Payment Method</h2>
                 </div>
@@ -357,11 +427,11 @@ const CheckoutForm = () => {
 
               <Button
                 type="submit"
-                disabled={loading}
+                disabled={loading || pickupInClosure || deliveryInClosure}
                 className="w-full h-12 rounded-full bg-blue-600 hover:bg-blue-700 text-white hover:scale-105 transition-all disabled:opacity-50"
                 data-testid="place-order-button"
               >
-                {loading ? 'Processing...' : formData.payment_method === 'stripe' ? `Pay £${totalAmount.toFixed(2)}` : `Place Order - £${totalAmount.toFixed(2)}`}
+                {loading ? 'Processing...' : formData.payment_method === 'stripe' ? `Pay £${grandTotal.toFixed(2)}` : `Place Order - £${grandTotal.toFixed(2)}`}
               </Button>
             </form>
           </div>
@@ -379,10 +449,70 @@ const CheckoutForm = () => {
                   </div>
                 ))}
               </div>
-              <div className="border-t border-slate-200 pt-4">
-                <div className="flex justify-between items-center">
+              <div className="border-t border-slate-200 pt-4 space-y-3">
+                {/* Promo Code */}
+                <div className="pb-3">
+                  {promoApplied ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-200 rounded-xl px-3 py-2" data-testid="promo-applied">
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-700 font-semibold text-sm">WELCOME10</span>
+                        <span className="text-green-600 text-xs">(-10%)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={removePromoCode}
+                        className="text-red-500 hover:text-red-700 text-xs font-medium"
+                        data-testid="remove-promo-button"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          placeholder="Promo code"
+                          value={promoCode}
+                          onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
+                          className="flex-1 px-3 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          data-testid="promo-code-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={applyPromoCode}
+                          className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          data-testid="apply-promo-button"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                      {promoError && <p className="text-red-500 text-xs mt-1" data-testid="promo-error">{promoError}</p>}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Subtotal</span>
+                  <span className="font-medium" data-testid="checkout-subtotal">£{totalAmount.toFixed(2)}</span>
+                </div>
+                {promoApplied && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-green-600">Discount (10%)</span>
+                    <span className="font-medium text-green-600" data-testid="checkout-discount">-£{discount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Delivery</span>
+                  {deliveryCharge > 0 ? (
+                    <span className="font-medium text-amber-600" data-testid="checkout-delivery-charge">£{deliveryCharge.toFixed(2)}</span>
+                  ) : (
+                    <span className="font-medium text-green-600" data-testid="checkout-delivery-charge">FREE</span>
+                  )}
+                </div>
+                <div className="border-t border-slate-200 pt-3 flex justify-between items-center">
                   <span className="text-lg font-semibold">Total</span>
-                  <span className="text-2xl font-bold text-blue-600" data-testid="checkout-total">£{totalAmount.toFixed(2)}</span>
+                  <span className="text-2xl font-bold text-blue-600" data-testid="checkout-total">£{grandTotal.toFixed(2)}</span>
                 </div>
               </div>
             </div>

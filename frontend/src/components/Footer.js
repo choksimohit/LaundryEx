@@ -6,7 +6,7 @@ export const Footer = () => {
   return (
     <footer className="bg-blue-900 text-white mt-auto" data-testid="footer">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {/* Contact Us */}
           <div>
             <h3 className="text-lg md:text-xl font-bold mb-4 border-b-2 border-yellow-400 inline-block pb-1">
@@ -20,8 +20,8 @@ export const Footer = () => {
                   </div>
                   <span className="font-semibold text-sm md:text-base">Call Us</span>
                 </div>
-                <a href="tel:+447777367078" className="text-white hover:text-yellow-400 transition-colors ml-10 text-sm md:text-base">
-                  +44 7777 367078
+                <a href="tel:+447777367076" className="text-white hover:text-yellow-400 transition-colors ml-10 text-sm md:text-base">
+                  +44 7777 367076
                 </a>
               </div>
               
@@ -60,6 +60,11 @@ export const Footer = () => {
                   <span className="text-yellow-400">→</span> Order Now
                 </Link>
               </li>
+              <li>
+                <Link to="/sitemap" className="hover:text-yellow-400 transition-colors flex items-center gap-2 text-sm md:text-base">
+                  <span className="text-yellow-400">→</span> Sitemap
+                </Link>
+              </li>
             </ul>
           </div>
 
@@ -93,30 +98,6 @@ export const Footer = () => {
             </div>
           </div>
 
-          {/* Subscribe */}
-          <div>
-            <h3 className="text-lg md:text-xl font-bold mb-4 border-b-2 border-yellow-400 inline-block pb-1">
-              Subscribe
-            </h3>
-            <div className="mt-6">
-              <div className="flex gap-2">
-                <input
-                  type="email"
-                  placeholder="Your Email"
-                  className="flex-1 px-3 py-2 md:px-4 md:py-3 rounded-lg text-slate-800 focus:outline-none focus:ring-2 focus:ring-yellow-400 text-sm"
-                  data-testid="subscribe-email-input"
-                />
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 px-4 md:px-6 rounded-lg transition-colors"
-                  data-testid="subscribe-button"
-                >
-                  <svg className="h-4 w-4 md:h-5 md:w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Bar */}

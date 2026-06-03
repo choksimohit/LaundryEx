@@ -13,6 +13,9 @@ import { Checkout } from './pages/Checkout';
 import { OrderConfirmation } from './pages/OrderConfirmation';
 import { Dashboard } from './pages/Dashboard';
 import { Admin } from './pages/Admin';
+import { Sitemap } from './pages/Sitemap';
+import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 import { isAuthenticated, getUser } from './utils/auth';
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
@@ -58,6 +61,8 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/services" element={<Services />} />
             <Route path="/order" element={<Products />} />
             <Route path="/cart" element={<PrivateRoute><Cart /></PrivateRoute>} />
@@ -65,6 +70,7 @@ function App() {
             <Route path="/order-confirmation/:orderId" element={<PrivateRoute><OrderConfirmation /></PrivateRoute>} />
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/admin" element={<PrivateRoute adminOnly><Admin /></PrivateRoute>} />
+            <Route path="/sitemap" element={<Sitemap />} />
           </Routes>
         </div>
         <Footer />

@@ -8,45 +8,61 @@ export const Services = () => {
 
   const services = [
     {
-      id: 'dry-cleaning',
-      title: 'Dry Cleaning',
-      description: 'Expert dry cleaning for delicate fabrics and formal wear. We handle everything from suits to evening dresses with care.',
-      image: 'https://images.unsplash.com/photo-1617691120034-5bf8a1a31fbb?crop=entropy&cs=srgb&fm=jpg&q=85',
-      categories: ['Accessories', 'Bottoms', 'Tops', 'Outerwear', 'Dresses'],
-      priceRange: '£4.95 - £49.95'
+      id: 'laundry',
+      title: 'Laundry Service',
+      description: 'Standard and delicate wash services. We wash, dry, and fold your clothes with professional care using eco-friendly products.',
+      image: 'https://images.unsplash.com/photo-1586284359445-2e1d8db7f4cd?crop=entropy&cs=srgb&fm=jpg&q=85',
+      categories: ['Standard Wash', 'Delicate Wash'],
+      orderCategory: 'Laundry',
     },
     {
-      id: 'household-bulk',
-      title: 'Household & Bulk Laundry',
-      description: 'Professional cleaning for household items including duvets, curtains, towels, and bedding of all sizes.',
-      image: 'https://images.unsplash.com/photo-1631679706099-a826cb8a3464?crop=entropy&cs=srgb&fm=jpg&q=85',
-      categories: ['Bedding', 'Curtains', 'Towels'],
-      priceRange: '£2.95 - £24.95'
+      id: 'dry-cleaning',
+      title: 'Dry Clean Service',
+      description: 'Expert dry cleaning for delicate fabrics and formal wear. We handle everything from suits to evening dresses with the utmost care.',
+      image: 'https://images.pexels.com/photos/325876/pexels-photo-325876.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+      categories: ['Accessories', 'Bottoms', 'Tops', 'Outerwear', 'Dresses'],
+      orderCategory: 'Dry Cleaning',
+    },
+    {
+      id: 'wash-iron',
+      title: 'Wash & Iron Service',
+      description: 'Complete service including washing, drying, and professional ironing. Your clothes come back fresh, crisp, and ready to wear.',
+      image: 'https://images.unsplash.com/photo-1758279744970-b32360a5e907?crop=entropy&cs=srgb&fm=jpg&q=85',
+      categories: ['Standard Wash & Iron'],
+      orderCategory: 'Wash & Iron',
     },
     {
       id: 'ironing',
       title: 'Ironing Service',
-      description: 'Professional ironing service for crisp, wrinkle-free clothes. Perfect for shirts, blouses, trousers, and more.',
-      image: 'https://images.unsplash.com/photo-1489274495757-95c7c837b101?crop=entropy&cs=srgb&fm=jpg&q=85',
+      description: 'Professional ironing for crisp, wrinkle-free results. Perfect for shirts, blouses, trousers, and all your everyday garments.',
+      image: 'https://images.unsplash.com/photo-1740684589228-54b6fba08985?crop=entropy&cs=srgb&fm=jpg&q=85',
       categories: ['Shirts', 'Trousers', 'Dresses & Others'],
-      priceRange: '£2.50 - £4.95'
+      orderCategory: 'Ironing',
     },
     {
-      id: 'laundry',
-      title: 'Laundry (Wash & Fold)',
-      description: 'Standard and delicate wash services. We wash, dry, and fold your clothes with care. Minimum 3kg order.',
-      image: 'https://images.unsplash.com/photo-1627564359646-5972788cec65?crop=entropy&cs=srgb&fm=jpg&q=85',
-      categories: ['Standard Wash', 'Delicate Wash'],
-      priceRange: '£3.95 - £4.95 per kg'
+      id: 'household',
+      title: 'Household',
+      description: 'Professional cleaning for household items including duvets, curtains, towels, and bedding of all sizes. Fresh and spotless every time.',
+      image: 'https://images.unsplash.com/photo-1614045963521-189262b3c60b?crop=entropy&cs=srgb&fm=jpg&q=85',
+      categories: ['Bedding', 'Curtains', 'Towels'],
+      orderCategory: 'Household & Bulk Laundry',
     },
     {
-      id: 'wash-iron',
-      title: 'Wash & Iron',
-      description: 'Complete service including washing, drying, and professional ironing. Your clothes come back fresh and ready to wear.',
-      image: 'https://images.unsplash.com/photo-1582735689369-4fe89db7114c?crop=entropy&cs=srgb&fm=jpg&q=85',
-      categories: ['Standard Wash & Iron'],
-      priceRange: '£5.95 per kg'
-    }
+      id: 'alteration-repairs',
+      title: 'Alteration & Repairs',
+      description: 'Expert tailoring services for all your clothing alterations and repairs. From hemming to resizing, we bring your garments back to perfection.',
+      image: 'https://images.pexels.com/photos/4614223/pexels-photo-4614223.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940',
+      categories: ['Hemming', 'Resizing', 'Repairs'],
+      orderCategory: 'Alteration & Repairs',
+    },
+    {
+      id: 'shoe-cleaning',
+      title: 'Shoe Cleaning',
+      description: 'Professional shoe care including deep cleaning, polishing, and restoration. Give your favourite footwear a brand new lease of life.',
+      image: 'https://images.unsplash.com/photo-1626964613814-945c5c13dbd1?crop=entropy&cs=srgb&fm=jpg&q=85',
+      categories: ['Trainers', 'Leather', 'Suede'],
+      orderCategory: 'Shoe Cleaning',
+    },
   ];
 
   return (
@@ -76,9 +92,6 @@ export const Services = () => {
                   alt={service.title}
                   className="w-full h-full object-cover transform hover:scale-110 transition-transform duration-500"
                 />
-                <div className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold">
-                  {service.priceRange}
-                </div>
               </div>
               
               <div className="p-6">

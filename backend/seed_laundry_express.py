@@ -33,7 +33,7 @@ async def seed_database():
             "email": "support@laundry-express.co.uk",
             "password": pwd_context.hash("admin123"),
             "name": "Super Admin",
-            "phone": "+44 7777 367078",
+            "phone": "+44 7777 367076",
             "role": "super_admin",
             "created_at": datetime.now(timezone.utc).isoformat()
         }
