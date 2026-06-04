@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Package, Clock } from 'lucide-react';
+import { Package, Clock, MapPin, MessageSquare } from 'lucide-react';
 import api from '../utils/api';
 import { toast } from 'sonner';
 
@@ -80,20 +80,24 @@ export const Dashboard = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-600">
-                      Pickup: {order.pickup_date} at {order.pickup_time}
-                    </span>
+                <div className="bg-slate-50 rounded-xl p-4 mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <MapPin className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm font-medium text-slate-700">Address</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-slate-400" />
-                    <span className="text-sm text-slate-600">
-                      Delivery: {order.delivery_date} at {order.delivery_time}
-                    </span>
-                  </div>
+                  <p className="text-sm text-slate-800 ml-6">{order.address || 'N/A'}</p>
+                  <p className="text-sm text-slate-500 ml-6">Postcode: {order.pin_code || 'N/A'}</p>
                 </div>
+
+                {order.customer_note && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <MessageSquare className="h-4 w-4 text-amber-600" />
+                      <span className="text-sm font-medium text-amber-800">Your Note</span>
+                    </div>
+                    <p className="text-sm text-amber-700 ml-6 italic">{order.customer_note}</p>
+                  </div>
+                )}
 
                 <div className="border-t border-slate-200 pt-4 mb-4">
                   <h4 className="text-sm font-medium text-slate-700 mb-2">Order Items:</h4>
@@ -103,6 +107,35 @@ export const Dashboard = () => {
                         • {item.product_name} × {item.quantity} - £{(item.price * item.quantity).toFixed(2)}
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 text-sm">
+                  <div className="bg-blue-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-3.5 w-3.5 text-blue-600" />
+                      <span className="text-blue-700 font-medium">Pickup</span>
+                    </div>
+                    <span className="block text-slate-800 font-medium">{order.pickup_date} at {order.pickup_time}</span>
+                    {order.pickup_instruction && (
+                      <div className="flex items-start gap-1.5 mt-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+                        <span className="text-slate-500 italic">{order.pickup_instruction}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="bg-green-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Clock className="h-3.5 w-3.5 text-green-600" />
+                      <span className="text-green-700 font-medium">Delivery</span>
+                    </div>
+                    <span className="block text-slate-800 font-medium">{order.delivery_date} at {order.delivery_time}</span>
+                    {order.delivery_instruction && (
+                      <div className="flex items-start gap-1.5 mt-1.5">
+                        <MessageSquare className="h-3.5 w-3.5 text-slate-400 mt-0.5 shrink-0" />
+                        <span className="text-slate-500 italic">{order.delivery_instruction}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
