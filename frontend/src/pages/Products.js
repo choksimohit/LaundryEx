@@ -16,6 +16,7 @@ export const Products = () => {
   const [pinCode, setPinCode] = useState('');
   const [hasValidPinCode, setHasValidPinCode] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [subcategoryOrders, setSubcategoryOrders] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -72,6 +73,13 @@ export const Products = () => {
       if (response.data.length > 0) {
         setSelectedCategory(response.data[0].name);
       }
+      // Also load subcategory ordering
+      try {
+        const scRes = await api.get('/subcategories-order');
+        const orderMap = {};
+        scRes.data.forEach(sc => { orderMap[`${sc.category}|${sc.name}`] = sc.sort_order; });
+        setSubcategoryOrders(orderMap);
+      } catch (e) { /* non-critical */ }
     } catch (error) {
       toast.error('Failed to load categories');
     }
@@ -110,7 +118,14 @@ export const Products = () => {
       }
       grouped[key].push(product);
     });
-    return grouped;
+    // Sort subcategories by their saved order
+    const sorted = Object.entries(grouped).sort(([a], [b]) => {
+      const orderA = subcategoryOrders[`${selectedCategory}|${a}`] ?? 999;
+      const orderB = subcategoryOrders[`${selectedCategory}|${b}`] ?? 999;
+      if (orderA !== orderB) return orderA - orderB;
+      return a.localeCompare(b);
+    });
+    return Object.fromEntries(sorted);
   };
 
   const addToCart = (product) => {
