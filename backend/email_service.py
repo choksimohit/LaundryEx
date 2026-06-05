@@ -484,6 +484,8 @@ def send_password_reset_email(to_email: str, name: str, reset_link: str):
           </div>
           <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 24px 0 0; border-top: 1px solid #e2e8f0; padding-top: 16px;">
             If you didn't request this, you can safely ignore this email. Your password will remain unchanged.
+            Thanks,<br>
+            The Laundry Express Team
           </p>
         </div>
       </div>
