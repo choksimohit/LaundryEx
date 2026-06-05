@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Configure Resend
 resend.api_key = os.environ.get("RESEND_API_KEY")
 SENDER_EMAIL = os.environ.get("SENDER_EMAIL", "support@laundry-express.co.uk")
 ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "support@laundry-express.co.uk")
@@ -15,21 +14,12 @@ ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "support@laundry-express.co.uk")
 logger = logging.getLogger(__name__)
 
 
-def generate_order_confirmation_email(order_data: Dict) -> str:
-    """Generate HTML email for order confirmation sent to customer"""
-    
+def _build_items_html(order_data):
     items_html = ""
     for item in order_data["items"]:
         category = item.get('category', '')
         subcategory = item.get('subcategory', '')
-
-        # Build category text safely
-        category_text = ""
-        if category and subcategory:
-            category_text = f"{category} → {subcategory}"
-        elif category:
-            category_text = category
-
+        category_text = f"{category} → {subcategory}" if category and subcategory else category
         items_html += f"""
         <tr>
             <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
@@ -46,7 +36,94 @@ def generate_order_confirmation_email(order_data: Dict) -> str:
             </td>
         </tr>
         """
-    
+    return items_html
+
+
+def _build_schedule_html(order_data):
+    pickup_instruction = order_data.get('pickup_instruction', '')
+    delivery_instruction = order_data.get('delivery_instruction', '')
+    return f"""
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
+        <tr>
+            <td width="50%" style="padding-right: 12px;">
+                <div style="background-color: #eff6ff; border-radius: 8px; padding: 20px;">
+                    <div style="font-size: 14px; color: #3b82f6; font-weight: 600; margin-bottom: 8px;">🧺 Pickup</div>
+                    <div style="font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">{order_data['pickup_date']}</div>
+                    <div style="font-size: 14px; color: #64748b; margin-bottom: 6px;">{order_data['pickup_time']}</div>
+                    {f'<div style="font-size: 13px; color: #64748b; font-style: italic;">{pickup_instruction}</div>' if pickup_instruction else ''}
+                </div>
+            </td>
+            <td width="50%" style="padding-left: 12px;">
+                <div style="background-color: #f0fdf4; border-radius: 8px; padding: 20px;">
+                    <div style="font-size: 14px; color: #22c55e; font-weight: 600; margin-bottom: 8px;">🚚 Delivery</div>
+                    <div style="font-size: 15px; font-weight: 600; color: #1e293b; margin-bottom: 2px;">{order_data['delivery_date']}</div>
+                    <div style="font-size: 14px; color: #64748b; margin-bottom: 6px;">{order_data['delivery_time']}</div>
+                    {f'<div style="font-size: 13px; color: #64748b; font-style: italic;">{delivery_instruction}</div>' if delivery_instruction else ''}
+                </div>
+            </td>
+        </tr>
+    </table>
+    """
+
+
+def _build_address_html(order_data):
+    return f"""
+    <div style="background-color: #f1f5f9; border-radius: 8px; padding: 20px; margin-bottom: 32px;">
+        <div style="font-size: 13px; color: #64748b; margin-bottom: 6px;">📍 Delivery Address</div>
+        <div style="font-size: 15px; color: #1e293b; margin-bottom: 4px;">{order_data.get('address', 'N/A')}</div>
+        <div style="font-size: 14px; color: #64748b;">Postcode: {order_data.get('pin_code', 'N/A')}</div>
+    </div>
+    """
+
+
+def _build_customer_note_html(order_data):
+    note = order_data.get('customer_note', '')
+    if not note:
+        return ''
+    return f"""
+    <div style="background-color: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin-bottom: 32px;">
+        <div style="font-size: 13px; font-weight: 600; color: #92400e; margin-bottom: 6px;">📝 Customer Note</div>
+        <div style="font-size: 14px; color: #78350f; font-style: italic;">{note}</div>
+    </div>
+    """
+
+
+def _build_price_summary_html(order_data):
+    items_total = order_data.get('items_total', order_data['total_amount'])
+    discount = order_data.get('discount_amount', 0)
+    promo_code = order_data.get('promo_code', '')
+    delivery_charge = order_data.get('delivery_charge', 0)
+    discount_row = f'<tr><td style="padding: 6px 0; color: #16a34a; font-size: 14px;">Discount ({promo_code})</td><td style="padding: 6px 0; text-align: right; color: #16a34a;">-£{discount:.2f}</td></tr>' if discount else ''
+    delivery_text = 'FREE' if not delivery_charge else f'£{delivery_charge:.2f}'
+    return f"""
+    <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 32px;">
+        <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Price Summary</h3>
+        <table width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+                <td style="padding: 6px 0; color: #64748b; font-size: 14px;">Subtotal</td>
+                <td style="padding: 6px 0; text-align: right; color: #1e293b;">£{items_total:.2f}</td>
+            </tr>
+            {discount_row}
+            <tr>
+                <td style="padding: 6px 0; color: #64748b; font-size: 14px;">Delivery Charge</td>
+                <td style="padding: 6px 0; text-align: right; color: #1e293b;">{delivery_text}</td>
+            </tr>
+            <tr style="border-top: 1px solid #e2e8f0;">
+                <td style="padding: 12px 0 6px; font-weight: 700; color: #1e293b; font-size: 16px;">Total</td>
+                <td style="padding: 12px 0 6px; text-align: right; font-weight: 700; color: #2563eb; font-size: 18px;">£{order_data['total_amount']:.2f}</td>
+            </tr>
+        </table>
+    </div>
+    """
+
+
+def generate_order_confirmation_email(order_data: Dict) -> str:
+    items_html = _build_items_html(order_data)
+    schedule_html = _build_schedule_html(order_data)
+    address_html = _build_address_html(order_data)
+    customer_note_html = _build_customer_note_html(order_data)
+    price_summary_html = _build_price_summary_html(order_data)
+
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -59,34 +136,33 @@ def generate_order_confirmation_email(order_data: Dict) -> str:
             <tr>
                 <td align="center">
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <!-- Header -->
                         <tr>
                             <td style="background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); padding: 40px; text-align: center;">
                                 <h1 style="margin: 0; color: #ffffff; font-size: 32px; font-weight: 600;">Order Confirmed! 🎉</h1>
                                 <p style="margin: 12px 0 0 0; color: #dbeafe; font-size: 16px;">Thank you for choosing Laundry Express</p>
                             </td>
                         </tr>
-                        
-                        <!-- Order Details -->
                         <tr>
                             <td style="padding: 40px;">
                                 <div style="background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
                                     <table width="100%" cellpadding="0" cellspacing="0">
                                         <tr>
-                                            <td style="padding-bottom: 12px;">
+                                            <td>
                                                 <div style="font-size: 14px; color: #64748b; margin-bottom: 4px;">Order Number</div>
                                                 <div style="font-size: 24px; font-weight: 700; color: #2563eb;">#{order_data['order_number']}</div>
                                             </td>
-                                            <td style="padding-bottom: 12px; text-align: right;">
-                                                <div style="font-size: 14px; color: #64748b; margin-bottom: 4px;">Total Amount</div>
-                                                <div style="font-size: 24px; font-weight: 700; color: #2563eb;">£{order_data['total_amount']:.2f}</div>
+                                            <td style="text-align: right;">
+                                                <div style="font-size: 14px; color: #64748b; margin-bottom: 4px;">Payment</div>
+                                                <div style="font-size: 16px; font-weight: 600; color: #1e293b; text-transform: capitalize;">{order_data['payment_method'].replace('_', ' ')}</div>
                                             </td>
                                         </tr>
                                     </table>
                                 </div>
-                                
-                                <!-- Order Items -->
-                                <h2 style="margin: 0 0 20px 0; font-size: 20px; color: #1e293b;">Order Items</h2>
+
+                                {address_html}
+                                {customer_note_html}
+
+                                <h2 style="margin: 0 0 16px 0; font-size: 20px; color: #1e293b;">Order Items</h2>
                                 <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 32px;">
                                     <thead>
                                         <tr style="background-color: #f8fafc;">
@@ -95,41 +171,15 @@ def generate_order_confirmation_email(order_data: Dict) -> str:
                                             <th style="padding: 12px; text-align: right; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Price</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        {items_html}
-                                    </tbody>
+                                    <tbody>{items_html}</tbody>
                                 </table>
-                                
-                                <!-- Pickup & Delivery -->
-                                <h2 style="margin: 0 0 20px 0; font-size: 20px; color: #1e293b;">Pickup & Delivery Schedule</h2>
-                                <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 32px;">
-                                    <tr>
-                                        <td width="50%" style="padding-right: 12px;">
-                                            <div style="background-color: #f1f5f9; border-radius: 8px; padding: 20px;">
-                                                <div style="font-size: 14px; color: #64748b; margin-bottom: 8px;">🧺 Pickup</div>
-                                                <div style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 4px;">{order_data['pickup_date']}</div>
-                                                <div style="font-size: 14px; color: #64748b;">{order_data['pickup_time']}</div>
-                                            </div>
-                                        </td>
-                                        <td width="50%" style="padding-left: 12px;">
-                                            <div style="background-color: #f1f5f9; border-radius: 8px; padding: 20px;">
-                                                <div style="font-size: 14px; color: #64748b; margin-bottom: 8px;">🚚 Delivery</div>
-                                                <div style="font-size: 16px; font-weight: 600; color: #1e293b; margin-bottom: 4px;">{order_data['delivery_date']}</div>
-                                                <div style="font-size: 14px; color: #64748b;">{order_data['delivery_time']}</div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
-                                
-                                <!-- Payment Method -->
-                                <div style="background-color: #f8fafc; border-left: 4px solid #2563eb; padding: 16px; border-radius: 4px;">
-                                    <div style="font-size: 14px; color: #64748b; margin-bottom: 4px;">Payment Method</div>
-                                    <div style="font-size: 16px; font-weight: 500; color: #1e293b; text-transform: capitalize;">{order_data['payment_method'].replace('_', ' ')}</div>
-                                </div>
+
+                                {price_summary_html}
+
+                                <h2 style="margin: 0 0 16px 0; font-size: 20px; color: #1e293b;">Pickup & Delivery Schedule</h2>
+                                {schedule_html}
                             </td>
                         </tr>
-                        
-                        <!-- Footer -->
                         <tr>
                             <td style="background-color: #f8fafc; padding: 32px; text-align: center; border-top: 1px solid #e2e8f0;">
                                 <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px;">Need help? Contact us</p>
@@ -148,8 +198,6 @@ def generate_order_confirmation_email(order_data: Dict) -> str:
 
 
 def generate_status_update_email(order_data: Dict, new_status: str) -> str:
-    """Generate HTML email for order status update sent to customer"""
-    
     status_messages = {
         "pending": "Your order has been received and is awaiting confirmation.",
         "confirmed": "Great news! Your order has been confirmed and we're preparing for pickup.",
@@ -157,7 +205,6 @@ def generate_status_update_email(order_data: Dict, new_status: str) -> str:
         "completed": "Your order is complete and ready for delivery!",
         "cancelled": "Your order has been cancelled. If you have questions, please contact us."
     }
-    
     status_colors = {
         "pending": "#f59e0b",
         "confirmed": "#2563eb",
@@ -165,7 +212,6 @@ def generate_status_update_email(order_data: Dict, new_status: str) -> str:
         "completed": "#10b981",
         "cancelled": "#ef4444"
     }
-    
     status_icons = {
         "pending": "⏳",
         "confirmed": "✅",
@@ -173,7 +219,13 @@ def generate_status_update_email(order_data: Dict, new_status: str) -> str:
         "completed": "🎉",
         "cancelled": "❌"
     }
-    
+
+    items_html = _build_items_html(order_data)
+    schedule_html = _build_schedule_html(order_data)
+    address_html = _build_address_html(order_data)
+    customer_note_html = _build_customer_note_html(order_data)
+    price_summary_html = _build_price_summary_html(order_data)
+
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -186,15 +238,12 @@ def generate_status_update_email(order_data: Dict, new_status: str) -> str:
             <tr>
                 <td align="center">
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <!-- Header -->
                         <tr>
                             <td style="background-color: {status_colors.get(new_status, '#2563eb')}; padding: 40px; text-align: center;">
                                 <div style="font-size: 48px; margin-bottom: 16px;">{status_icons.get(new_status, '📦')}</div>
                                 <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 600;">Order Status Updated</h1>
                             </td>
                         </tr>
-                        
-                        <!-- Content -->
                         <tr>
                             <td style="padding: 40px;">
                                 <div style="background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin-bottom: 32px; text-align: center;">
@@ -204,32 +253,32 @@ def generate_status_update_email(order_data: Dict, new_status: str) -> str:
                                         {new_status}
                                     </div>
                                 </div>
-                                
+
                                 <p style="font-size: 16px; line-height: 1.6; color: #475569; text-align: center; margin: 0 0 32px 0;">
                                     {status_messages.get(new_status, 'Your order status has been updated.')}
                                 </p>
-                                
-                                <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px;">
-                                    <h3 style="margin: 0 0 16px 0; font-size: 16px; color: #1e293b;">Order Details</h3>
-                                    <table width="100%" cellpadding="0" cellspacing="0">
-                                        <tr>
-                                            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Total Amount</td>
-                                            <td style="padding: 8px 0; text-align: right; font-weight: 600; color: #1e293b;">£{order_data['total_amount']:.2f}</td>
+
+                                {address_html}
+                                {customer_note_html}
+
+                                <h2 style="margin: 0 0 16px 0; font-size: 20px; color: #1e293b;">Order Items</h2>
+                                <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 32px;">
+                                    <thead>
+                                        <tr style="background-color: #f8fafc;">
+                                            <th style="padding: 12px; text-align: left; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Item</th>
+                                            <th style="padding: 12px; text-align: center; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Qty</th>
+                                            <th style="padding: 12px; text-align: right; font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase;">Price</th>
                                         </tr>
-                                        <tr>
-                                            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Pickup Date</td>
-                                            <td style="padding: 8px 0; text-align: right; color: #1e293b;">{order_data['pickup_date']}</td>
-                                        </tr>
-                                        <tr>
-                                            <td style="padding: 8px 0; color: #64748b; font-size: 14px;">Delivery Date</td>
-                                            <td style="padding: 8px 0; text-align: right; color: #1e293b;">{order_data['delivery_date']}</td>
-                                        </tr>
-                                    </table>
-                                </div>
+                                    </thead>
+                                    <tbody>{items_html}</tbody>
+                                </table>
+
+                                {price_summary_html}
+
+                                <h2 style="margin: 0 0 16px 0; font-size: 20px; color: #1e293b;">Pickup & Delivery Schedule</h2>
+                                {schedule_html}
                             </td>
                         </tr>
-                        
-                        <!-- Footer -->
                         <tr>
                             <td style="background-color: #f8fafc; padding: 32px; text-align: center; border-top: 1px solid #e2e8f0;">
                                 <p style="margin: 0 0 8px 0; color: #64748b; font-size: 14px;">Questions? We're here to help</p>
@@ -247,37 +296,11 @@ def generate_status_update_email(order_data: Dict, new_status: str) -> str:
 
 
 def generate_admin_notification_email(order_data: Dict) -> str:
-    """Generate HTML email for new order notification sent to admin"""
-    
-    items_html = ""
-    for item in order_data["items"]:
-        category = item.get('category', '')
-        subcategory = item.get('subcategory', '')
+    items_html = _build_items_html(order_data)
+    schedule_html = _build_schedule_html(order_data)
+    customer_note_html = _build_customer_note_html(order_data)
+    price_summary_html = _build_price_summary_html(order_data)
 
-        # Build category text safely
-        category_text = ""
-        if category and subcategory:
-            category_text = f"{category} → {subcategory}"
-        elif category:
-            category_text = category
-
-        items_html += f"""
-        <tr>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0;">
-                <div style="font-weight: 500; color: #1e293b;">
-                    {item['product_name']}
-                    {f'<span style="font-size: 12px; color: #64748b; margin-left: 6px;">({category_text})</span>' if category_text else ''}
-                </div>
-            </td>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: center; color: #64748b;">
-                × {item['quantity']}
-            </td>
-            <td style="padding: 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-weight: 500; color: #1e293b;">
-                £{(item['price'] * item['quantity']):.2f}
-            </td>
-        </tr>
-        """
-    
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -290,7 +313,6 @@ def generate_admin_notification_email(order_data: Dict) -> str:
             <tr>
                 <td align="center">
                     <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-                        <!-- Header -->
                         <tr>
                             <td style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%); padding: 40px; text-align: center;">
                                 <div style="font-size: 48px; margin-bottom: 12px;">🔔</div>
@@ -298,15 +320,13 @@ def generate_admin_notification_email(order_data: Dict) -> str:
                                 <p style="margin: 12px 0 0 0; color: #e9d5ff; font-size: 14px;">Action required</p>
                             </td>
                         </tr>
-                        
-                        <!-- Order Info -->
                         <tr>
                             <td style="padding: 40px;">
                                 <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px; margin-bottom: 32px;">
                                     <div style="font-weight: 600; color: #92400e; margin-bottom: 4px;">⚠️ Pending Action</div>
                                     <div style="color: #92400e; font-size: 14px;">Please review and confirm this order in the admin panel</div>
                                 </div>
-                                
+
                                 <div style="background-color: #f1f5f9; border-radius: 12px; padding: 24px; margin-bottom: 32px;">
                                     <table width="100%" cellpadding="0" cellspacing="0">
                                         <tr>
@@ -321,8 +341,7 @@ def generate_admin_notification_email(order_data: Dict) -> str:
                                         </tr>
                                     </table>
                                 </div>
-                                
-                                <!-- Customer Info -->
+
                                 <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1e293b;">Customer Information</h3>
                                 <div style="background-color: #f8fafc; border-radius: 8px; padding: 20px; margin-bottom: 32px;">
                                     <table width="100%" cellpadding="0" cellspacing="0">
@@ -336,16 +355,21 @@ def generate_admin_notification_email(order_data: Dict) -> str:
                                         </tr>
                                         <tr>
                                             <td style="padding: 6px 0; color: #64748b; font-size: 14px;">Address</td>
-                                            <td style="padding: 6px 0; text-align: right; color: #1e293b;">{order_data['address']}</td>
+                                            <td style="padding: 6px 0; text-align: right; color: #1e293b;">{order_data.get('address', 'N/A')}</td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 6px 0; color: #64748b; font-size: 14px;">Pin Code</td>
-                                            <td style="padding: 6px 0; text-align: right; color: #1e293b;">{order_data['pin_code']}</td>
+                                            <td style="padding: 6px 0; color: #64748b; font-size: 14px;">Postcode</td>
+                                            <td style="padding: 6px 0; text-align: right; color: #1e293b;">{order_data.get('pin_code', 'N/A')}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding: 6px 0; color: #64748b; font-size: 14px;">Payment</td>
+                                            <td style="padding: 6px 0; text-align: right; color: #1e293b; text-transform: capitalize;">{order_data['payment_method'].replace('_', ' ')}</td>
                                         </tr>
                                     </table>
                                 </div>
-                                
-                                <!-- Order Items -->
+
+                                {customer_note_html}
+
                                 <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1e293b;">Order Items</h3>
                                 <table width="100%" cellpadding="0" cellspacing="0" style="border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; margin-bottom: 32px;">
                                     <thead>
@@ -355,37 +379,15 @@ def generate_admin_notification_email(order_data: Dict) -> str:
                                             <th style="padding: 10px; text-align: right; font-size: 12px; font-weight: 600; color: #64748b; text-transform: uppercase;">Price</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        {items_html}
-                                    </tbody>
+                                    <tbody>{items_html}</tbody>
                                 </table>
-                                
-                                <!-- Schedule -->
+
+                                {price_summary_html}
+
                                 <h3 style="margin: 0 0 16px 0; font-size: 18px; color: #1e293b;">Pickup & Delivery Schedule</h3>
-                                <table width="100%" cellpadding="0" cellspacing="0">
-                                    <tr>
-                                        <td width="50%" style="padding-right: 12px;">
-                                            <div style="border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-                                                <div style="font-size: 13px; color: #64748b; margin-bottom: 8px;">🧺 Pickup</div>
-                                                <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">{order_data['pickup_date']}</div>
-                                                <div style="font-size: 14px; color: #64748b;">{order_data['pickup_time']}</div>
-                                                {f'<div style="font-size: 13px; color: #64748b; margin-top: 8px; font-style: italic;">{order_data.get("pickup_instruction", "")}</div>' if order_data.get('pickup_instruction') else ''}
-                                            </div>
-                                        </td>
-                                        <td width="50%" style="padding-left: 12px;">
-                                            <div style="border: 2px solid #e2e8f0; border-radius: 8px; padding: 16px;">
-                                                <div style="font-size: 13px; color: #64748b; margin-bottom: 8px;">🚚 Delivery</div>
-                                                <div style="font-weight: 600; color: #1e293b; margin-bottom: 4px;">{order_data['delivery_date']}</div>
-                                                <div style="font-size: 14px; color: #64748b;">{order_data['delivery_time']}</div>
-                                                {f'<div style="font-size: 13px; color: #64748b; margin-top: 8px; font-style: italic;">{order_data.get("delivery_instruction", "")}</div>' if order_data.get('delivery_instruction') else ''}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                </table>
+                                {schedule_html}
                             </td>
                         </tr>
-                        
-                        <!-- Footer -->
                         <tr>
                             <td style="background-color: #f8fafc; padding: 24px; text-align: center; border-top: 1px solid #e2e8f0;">
                                 <p style="margin: 0; color: #64748b; font-size: 13px;">This is an automated notification from Laundry Express Admin System</p>
@@ -402,17 +404,14 @@ def generate_admin_notification_email(order_data: Dict) -> str:
 
 
 async def send_order_confirmation_email(order_data: Dict, recipient_email: str):
-    """Send order confirmation email to customer"""
     try:
         html_content = generate_order_confirmation_email(order_data)
-        
         params = {
             "from": SENDER_EMAIL,
             "to": [recipient_email],
             "subject": f"Order Confirmed - #{order_data['order_number']} | Laundry Express",
             "html": html_content
         }
-        
         email = await asyncio.to_thread(resend.Emails.send, params)
         logger.info(f"Order confirmation email sent to {recipient_email}, email_id: {email.get('id')}")
         return {"status": "success", "email_id": email.get("id")}
@@ -422,17 +421,14 @@ async def send_order_confirmation_email(order_data: Dict, recipient_email: str):
 
 
 async def send_status_update_email(order_data: Dict, new_status: str, recipient_email: str):
-    """Send order status update email to customer"""
     try:
         html_content = generate_status_update_email(order_data, new_status)
-        
         params = {
             "from": SENDER_EMAIL,
             "to": [recipient_email],
             "subject": f"Order #{order_data['order_number']} - Status Updated to {new_status.title()} | Laundry Express",
             "html": html_content
         }
-        
         email = await asyncio.to_thread(resend.Emails.send, params)
         logger.info(f"Status update email sent to {recipient_email}, email_id: {email.get('id')}")
         return {"status": "success", "email_id": email.get("id")}
@@ -442,17 +438,14 @@ async def send_status_update_email(order_data: Dict, new_status: str, recipient_
 
 
 async def send_admin_order_notification(order_data: Dict):
-    """Send new order notification to admin"""
     try:
         html_content = generate_admin_notification_email(order_data)
-        
         params = {
             "from": SENDER_EMAIL,
             "to": [ADMIN_EMAIL],
             "subject": f"🔔 New Order #{order_data['order_number']} - £{order_data['total_amount']:.2f} | Laundry Express",
             "html": html_content
         }
-        
         email = await asyncio.to_thread(resend.Emails.send, params)
         logger.info(f"Admin notification email sent, email_id: {email.get('id')}")
         return {"status": "success", "email_id": email.get("id")}
@@ -462,7 +455,6 @@ async def send_admin_order_notification(order_data: Dict):
 
 
 def send_password_reset_email(to_email: str, name: str, reset_link: str):
-    """Send password reset email to user"""
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -484,8 +476,6 @@ def send_password_reset_email(to_email: str, name: str, reset_link: str):
           </div>
           <p style="color: #94a3b8; font-size: 12px; line-height: 1.6; margin: 24px 0 0; border-top: 1px solid #e2e8f0; padding-top: 16px;">
             If you didn't request this, you can safely ignore this email. Your password will remain unchanged.
-            Thanks,<br>
-            The Laundry Express Team
           </p>
         </div>
       </div>
