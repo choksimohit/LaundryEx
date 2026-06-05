@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "Bash(Test-Path \"c:\\\\Users\\\\lenovo\\\\source\\\\repos\\\\LaundryEx-1\\\\README.md\")"
     ]
   }
 }

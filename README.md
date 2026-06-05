@@ -7,9 +7,9 @@
 **A modern, full-stack laundry service management platform built with React and FastAPI**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![React](https://img.shields.io/badge/React-18.x-blue.svg)](https://reactjs.org/)
+[![React](https://img.shields.io/badge/React-19.x-blue.svg)](https://reactjs.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115-green.svg)](https://fastapi.tiangolo.com/)
-[![MongoDB](https://img.shields.io/badge/MongoDB-7.x-brightgreen.svg)](https://www.mongodb.com/)
+[![MongoDB](https://img.shields.io/badge/MongoDB-Atlas-brightgreen.svg)](https://www.mongodb.com/)
 
 [Live Demo](https://your-demo-url.com) • [Documentation](#) • [Report Bug](#) • [Request Feature](#)
 
@@ -77,8 +77,8 @@ LaundryEx addresses these issues with a modern, automated solution that benefits
 ## 🛠️ Tech Stack
 
 ### Frontend
-- **Framework:** React 18.x
-- **Routing:** React Router v6
+- **Framework:** React 19.x
+- **Routing:** React Router v7
 - **Styling:** Tailwind CSS 3.x
 - **UI Components:** Shadcn/ui
 - **Icons:** Lucide React
@@ -89,8 +89,8 @@ LaundryEx addresses these issues with a modern, automated solution that benefits
 
 ### Backend
 - **Framework:** FastAPI 0.115
-- **Language:** Python 3.12
-- **Database:** MongoDB with Motor (async driver)
+- **Language:** Python 3.11
+- **Database:** MongoDB Atlas with Motor (async driver)
 - **Authentication:** JWT (python-jose)
 - **Password Hashing:** Passlib with bcrypt
 - **Payments:** Stripe Python SDK
@@ -99,10 +99,10 @@ LaundryEx addresses these issues with a modern, automated solution that benefits
 - **CORS:** FastAPI CORS Middleware
 
 ### Infrastructure
-- **Database:** MongoDB (local or Atlas)
-- **Process Manager:** Supervisor
+- **Database:** MongoDB Atlas (cloud)
+- **Hosting:** Vercel (frontend + backend)
 - **Web Server:** Uvicorn
-- **Environment:** Python venv
+- **Environment:** Python venv (Python 3.11)
 - **Package Management:** pip (backend), yarn (frontend)
 
 ---
@@ -113,8 +113,8 @@ LaundryEx addresses these issues with a modern, automated solution that benefits
 
 Before you begin, ensure you have the following installed:
 - **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **Python** (v3.12 or higher) - [Download](https://www.python.org/)
-- **MongoDB** (v7 or higher) - [Download](https://www.mongodb.com/try/download/community)
+- **Python 3.11** (specifically 3.11, not 3.12/3.13) - [Download](https://www.python.org/downloads/release/python-3118/)
+- **MongoDB Atlas** account (free tier) - [Sign up](https://cloud.mongodb.com)
 - **Yarn** package manager - `npm install -g yarn`
 
 ### 📥 Clone the Repository
@@ -131,53 +131,41 @@ cd laundryex
 cd backend
 ```
 
-2. **Create and activate virtual environment:**
+2. **Create and activate virtual environment (use Python 3.11):**
+```powershell
+# Windows
+py -3.11 -m venv venv
+.\venv\Scripts\activate
+```
 ```bash
-python -m venv venv
-
-# On Windows:
-venv\Scripts\activate
-
-# On macOS/Linux:
+# macOS/Linux
+python3.11 -m venv venv
 source venv/bin/activate
 ```
 
 3. **Install dependencies:**
-```bash
-pip install -r requirements.txt
+```powershell
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-4. **Create `.env` file:**
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit .env with your configuration
-```
-
-5. **Configure environment variables in `.env`:**
+4. **Configure environment variables in `backend/.env`:**
 ```env
-MONGO_URL="mongodb://localhost:27017"
-DB_NAME="laundry_express_db"
-CORS_ORIGINS="*"
-JWT_SECRET="your-super-secret-jwt-key-change-in-production"
-JWT_ALGORITHM="HS256"
-STRIPE_SECRET_KEY="sk_test_your_stripe_secret_key"
-STRIPE_PUBLISHABLE_KEY="pk_test_your_stripe_publishable_key"
-RESEND_API_KEY="re_your_resend_api_key"
-SENDER_EMAIL="support@laundry-express.co.uk"
-ADMIN_EMAIL="support@laundry-express.co.uk"
+MONGO_URL=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/?appName=<app>
+DB_NAME=laundry_db
+JWT_SECRET=your-super-secret-jwt-key
+JWT_ALGORITHM=HS256
+STRIPE_SECRET_KEY=sk_live_...
+RESEND_API_KEY=re_...
+SENDER_EMAIL=support@laundry-express.co.uk
+ADMIN_EMAIL=support@laundry-express.co.uk
 ```
 
-6. **Seed the database with sample data:**
-```bash
-python seed_from_csv.py
-```
+> **Note:** URL-encode special characters in the MongoDB password (e.g. `#` → `%23`).
 
-This will create:
-- Admin user: `admin@laundry-express.co.uk` / `admin123`
-- 127 products across all categories
-- Sample business with service areas
+5. **Restore production data (optional):**
+```powershell
+.\venv\Scripts\python.exe restore_backup.py
+```
 
 ### 🎨 Frontend Setup
 
@@ -191,57 +179,30 @@ cd ../frontend
 yarn install
 ```
 
-3. **Create `.env` file:**
-```bash
-# Copy example environment file
-cp .env.example .env
-
-# Edit .env with your configuration
-```
-
-4. **Configure environment variables in `.env`:**
+3. **Configure environment variables in `frontend/.env`:**
 ```env
-REACT_APP_BACKEND_URL=http://localhost:8001
-REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_test_your_stripe_publishable_key
+REACT_APP_BACKEND_URL=http://localhost:8000
+REACT_APP_STRIPE_PUBLISHABLE_KEY=pk_live_...
 ```
 
 ---
 
 ## 🏃 Running the Application
 
-### Option 1: Run Both Services with Supervisor (Recommended)
-
-If you're using the provided supervisor configuration:
-
-```bash
-# Start all services
-sudo supervisorctl start all
-
-# Check status
-sudo supervisorctl status
-
-# View logs
-tail -f /var/log/supervisor/backend.log
-tail -f /var/log/supervisor/frontend.log
-```
-
-### Option 2: Run Services Manually
-
 #### Start Backend
 
-```bash
+```powershell
 cd backend
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-uvicorn server:app --host 0.0.0.0 --port 8001 --reload
+.\venv\Scripts\python.exe -m uvicorn server:app --reload --host 0.0.0.0 --port 8000
 ```
 
-The backend API will be available at: **http://localhost:8001**
+The backend API will be available at: **http://127.0.0.1:8000**
 
-API Documentation (Swagger): **http://localhost:8001/docs**
+API Documentation (Swagger): **http://127.0.0.1:8000/docs**
 
 #### Start Frontend
 
-```bash
+```powershell
 cd frontend
 yarn start
 ```
@@ -252,11 +213,11 @@ The frontend will be available at: **http://localhost:3000**
 
 - **Customer Portal:** http://localhost:3000
 - **Admin Panel:** http://localhost:3000/admin
-- **API Docs:** http://localhost:8001/docs
+- **API Docs:** http://127.0.0.1:8000/docs
 
 **Default Admin Credentials:**
-- Email: `admin@laundry-express.co.uk`
-- Password: `admin123`
+- Email: `support@laundry-express.co.uk`
+- Role: `super_admin`
 
 **Test Postcodes:** CO27FQ, CO1, CO2, CO3, CO4, CO5
 
@@ -349,10 +310,11 @@ laundryex/
 
 ### Recommended Platforms
 
-**Quick Deploy (Easiest):**
-- Frontend: [Vercel](https://vercel.com) or [Netlify](https://netlify.com)
-- Backend: [Railway](https://railway.app) or [Render](https://render.com)
-- Database: [MongoDB Atlas](https://mongodb.com/cloud/atlas)
+**Current Deployment:**
+- Frontend + Backend: [Vercel](https://vercel.com) — https://laundry-ex.vercel.app
+- Database: [MongoDB Atlas](https://mongodb.com/cloud/atlas) (free tier)
+
+> **Important:** Add `0.0.0.0/0` to MongoDB Atlas Network Access to allow Vercel's dynamic IPs.
 
 **Self-Hosted:**
 - [DigitalOcean App Platform](https://digitalocean.com/products/app-platform)
@@ -477,7 +439,7 @@ git push origin feature/amazing-feature
 
 ## 📚 API Documentation
 
-Full API documentation is available at `http://localhost:8001/docs` when running the backend.
+Full API documentation is available at `http://127.0.0.1:8000/docs` when running the backend locally, or at `https://laundry-ex.vercel.app/docs` in production.
 
 ### Key Endpoints
 

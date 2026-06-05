@@ -103,8 +103,14 @@ export const Footer = () => {
         {/* Bottom Bar */}
         <div className="border-t border-blue-800 mt-8 md:mt-12 pt-6 md:pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <div className="text-xs md:text-sm text-center md:text-left">
+            <div className="text-xs md:text-sm text-center md:text-left space-y-1">
               <p>© 2025 Laundry Express. All rights reserved.</p>
+              <p className="text-blue-300">
+                Designed & Developed by{' '}
+                <a href="https://www.techgynt.com" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 transition-colors">
+                  www.techgynt.com
+                </a>
+              </p>
             </div>
             
             <div className="flex flex-wrap justify-center gap-2">
