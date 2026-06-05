@@ -108,7 +108,7 @@ export const Footer = () => {
               <p className="text-blue-300">
                 Designed & Developed by{' '}
                 <a href="https://www.techgynt.com" target="_blank" rel="noopener noreferrer" className="text-yellow-400 hover:text-yellow-300 transition-colors">
-                  www.techgynt.com
+                  Techgynt Infotech Private Limited
                 </a>
               </p>
             </div>
