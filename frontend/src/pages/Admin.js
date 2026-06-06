@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Link } from 'react-router-dom';
 import {
   Select,
   SelectContent,
@@ -14,7 +15,7 @@ import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
 import { getUser } from '../utils/auth';
-import { GripVertical, MapPin, Clock, MessageSquare, Download } from 'lucide-react';
+import { GripVertical, MapPin, Clock, MessageSquare, Download, PenLine, Trash2, Eye, EyeOff } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -112,6 +113,14 @@ export const Admin = () => {
   const [adminSubcategories, setAdminSubcategories] = useState([]);
   const [editingBusiness, setEditingBusiness] = useState(false);
   const [businessForm, setBusinessForm] = useState({ name: '', owner_email: '', pin_codes: '' });
+
+  // Blog state
+  const [blogPosts, setBlogPosts] = useState([]);
+  const [blogForm, setBlogForm] = useState({ title: '', content: '', excerpt: '', cover_image_url: '', meta_description: '', status: 'draft' });
+  const [editingPost, setEditingPost] = useState(null); // null = new, id = editing
+  const [showBlogEditor, setShowBlogEditor] = useState(false);
+  const [blogLoading, setBlogLoading] = useState(false);
+
   const user = getUser();
 
   const categorySensors = useSensors(
@@ -127,6 +136,7 @@ export const Admin = () => {
     loadBusiness();
     loadAdminCategories();
     loadAdminSubcategories();
+    loadBlogPosts();
   }, []);
 
   const loadStats = async () => {
@@ -285,6 +295,51 @@ export const Admin = () => {
     }
   };
 
+  const loadBlogPosts = async () => {
+    try {
+      const res = await api.get('/admin/blog');
+      setBlogPosts(res.data);
+    } catch { toast.error('Failed to load blog posts'); }
+  };
+
+  const openNewPost = () => {
+    setEditingPost(null);
+    setBlogForm({ title: '', content: '', excerpt: '', cover_image_url: '', meta_description: '', status: 'draft' });
+    setShowBlogEditor(true);
+  };
+
+  const openEditPost = (post) => {
+    setEditingPost(post.id);
+    setBlogForm({ title: post.title, content: post.content, excerpt: post.excerpt || '', cover_image_url: post.cover_image_url || '', meta_description: post.meta_description || '', status: post.status });
+    setShowBlogEditor(true);
+  };
+
+  const handleSaveBlogPost = async (e) => {
+    e.preventDefault();
+    setBlogLoading(true);
+    try {
+      if (editingPost) {
+        await api.put(`/admin/blog/${editingPost}`, blogForm);
+        toast.success('Post updated');
+      } else {
+        await api.post('/admin/blog', blogForm);
+        toast.success('Post created');
+      }
+      setShowBlogEditor(false);
+      loadBlogPosts();
+    } catch { toast.error('Failed to save post'); }
+    finally { setBlogLoading(false); }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm('Delete this post?')) return;
+    try {
+      await api.delete(`/admin/blog/${postId}`);
+      toast.success('Post deleted');
+      loadBlogPosts();
+    } catch { toast.error('Failed to delete post'); }
+  };
+
   return (
     <div className="min-h-screen bg-slate-50" data-testid="admin-page">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
@@ -317,6 +372,7 @@ export const Admin = () => {
             <TabsTrigger value="products" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-products">Products</TabsTrigger>
             <TabsTrigger value="categories" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-categories">Categories</TabsTrigger>
             <TabsTrigger value="businesses" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-businesses">Business Settings</TabsTrigger>
+            <TabsTrigger value="blog" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-blog">Blog</TabsTrigger>
           </TabsList>
 
           <TabsContent value="orders" className="space-y-6" data-testid="orders-tab-content">
@@ -607,6 +663,125 @@ export const Admin = () => {
                 <p className="text-center text-slate-500 py-8">No subcategories found.</p>
               )}
             </div>
+          </TabsContent>
+
+          {/* Blog Tab */}
+          <TabsContent value="blog" className="space-y-6">
+            {showBlogEditor ? (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-blue-600">{editingPost ? 'Edit Post' : 'New Blog Post'}</h2>
+                  <Button variant="outline" className="rounded-full" onClick={() => setShowBlogEditor(false)}>Cancel</Button>
+                </div>
+                <form onSubmit={handleSaveBlogPost} className="space-y-5">
+                  <div>
+                    <Label>Title *</Label>
+                    <Input value={blogForm.title} onChange={e => setBlogForm({...blogForm, title: e.target.value})} required placeholder="e.g. How to remove tough stains from clothes" className="mt-2 h-12 rounded-xl" />
+                  </div>
+                  <div>
+                    <Label>Cover Image URL (optional)</Label>
+                    <Input value={blogForm.cover_image_url} onChange={e => setBlogForm({...blogForm, cover_image_url: e.target.value})} placeholder="https://..." className="mt-2 h-12 rounded-xl" />
+                  </div>
+                  <div>
+                    <Label>Excerpt <span className="text-slate-400 font-normal">(short summary shown on blog list)</span></Label>
+                    <textarea
+                      value={blogForm.excerpt}
+                      onChange={e => setBlogForm({...blogForm, excerpt: e.target.value})}
+                      placeholder="A short 1-2 sentence summary of the post..."
+                      rows={2}
+                      className="w-full mt-2 px-3 py-2 border border-slate-200 rounded-xl text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <Label>Meta Description <span className="text-slate-400 font-normal">(for Google — 150-160 chars)</span></Label>
+                    <textarea
+                      value={blogForm.meta_description}
+                      onChange={e => setBlogForm({...blogForm, meta_description: e.target.value})}
+                      placeholder="Describe this article for search engines..."
+                      rows={2}
+                      maxLength={160}
+                      className="w-full mt-2 px-3 py-2 border border-slate-200 rounded-xl text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <p className="text-xs text-slate-400 mt-1">{blogForm.meta_description.length}/160 characters</p>
+                  </div>
+                  <div>
+                    <Label>Content *</Label>
+                    <textarea
+                      value={blogForm.content}
+                      onChange={e => setBlogForm({...blogForm, content: e.target.value})}
+                      required
+                      placeholder="Write your blog post here. Use blank lines to separate paragraphs."
+                      rows={16}
+                      className="w-full mt-2 px-3 py-2 border border-slate-200 rounded-xl text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
+                    />
+                  </div>
+                  <div className="flex items-center gap-4 pt-2">
+                    <Button type="submit" disabled={blogLoading} className="rounded-full bg-blue-600 hover:bg-blue-700 px-8">
+                      {blogLoading ? 'Saving...' : editingPost ? 'Update Post' : 'Save Post'}
+                    </Button>
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm font-medium text-slate-700">Status:</label>
+                      <select
+                        value={blogForm.status}
+                        onChange={e => setBlogForm({...blogForm, status: e.target.value})}
+                        className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="draft">Draft</option>
+                        <option value="published">Published</option>
+                      </select>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl p-6 border border-slate-200">
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h2 className="text-xl font-semibold text-blue-600">Blog Posts</h2>
+                    <p className="text-sm text-slate-500 mt-1">Write articles to drive traffic to your website</p>
+                  </div>
+                  <Button onClick={openNewPost} className="rounded-full bg-blue-600 hover:bg-blue-700">
+                    <PenLine className="h-4 w-4 mr-2" /> New Post
+                  </Button>
+                </div>
+
+                {blogPosts.length === 0 ? (
+                  <div className="text-center py-12">
+                    <PenLine className="h-12 w-12 text-slate-200 mx-auto mb-3" />
+                    <p className="text-slate-400">No posts yet. Write your first article!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {blogPosts.map(post => (
+                      <div key={post.id} className="flex items-start justify-between p-4 border border-slate-100 rounded-xl hover:border-blue-200 transition-colors">
+                        <div className="flex-1 min-w-0 mr-4">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-semibold text-slate-800 truncate">{post.title}</h3>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${post.status === 'published' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {post.status}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-400">{new Date(post.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          {post.status === 'published' && (
+                            <Link to={`/blog/${post.slug}`} target="_blank" className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="View post">
+                              <Eye className="h-4 w-4" />
+                            </Link>
+                          )}
+                          <button onClick={() => openEditPost(post)} className="p-2 text-slate-400 hover:text-blue-600 transition-colors" title="Edit">
+                            <PenLine className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => handleDeletePost(post.id)} className="p-2 text-slate-400 hover:text-red-500 transition-colors" title="Delete">
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

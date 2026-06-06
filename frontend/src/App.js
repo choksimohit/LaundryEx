@@ -16,6 +16,8 @@ import { Admin } from './pages/Admin';
 import { Sitemap } from './pages/Sitemap';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
+import { Blog } from './pages/Blog';
+import { BlogPost } from './pages/BlogPost';
 import { isAuthenticated, getUser } from './utils/auth';
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
@@ -71,6 +73,8 @@ function App() {
             <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
             <Route path="/admin" element={<PrivateRoute adminOnly><Admin /></PrivateRoute>} />
             <Route path="/sitemap" element={<Sitemap />} />
+            <Route path="/blog" element={<Blog />} />
+            <Route path="/blog/:slug" element={<BlogPost />} />
           </Routes>
         </div>
         <Footer />

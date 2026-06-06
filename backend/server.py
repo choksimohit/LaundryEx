@@ -793,6 +793,84 @@ async def sitemap_xml():
 {urls}</urlset>"""
     return Response(content=xml, media_type="application/xml")
 
+import re as _re
+
+class BlogPostCreate(BaseModel):
+    title: str
+    content: str
+    excerpt: Optional[str] = None
+    cover_image_url: Optional[str] = None
+    meta_description: Optional[str] = None
+    status: str = "draft"
+
+@api_router.get("/blog")
+async def get_blog_posts():
+    posts = await db.blog_posts.find({"status": "published"}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return posts
+
+@api_router.get("/blog/{slug}")
+async def get_blog_post(slug: str):
+    post = await db.blog_posts.find_one({"slug": slug, "status": "published"}, {"_id": 0})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@api_router.get("/admin/blog")
+async def get_admin_blog_posts(admin: dict = Depends(get_admin_user)):
+    posts = await db.blog_posts.find({}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    return posts
+
+@api_router.post("/admin/blog")
+async def create_blog_post(post_data: BlogPostCreate, admin: dict = Depends(get_admin_user)):
+    post_id = str(uuid.uuid4())
+    slug = _re.sub(r'[^a-z0-9-]', '', post_data.title.lower().replace(' ', '-'))
+    existing = await db.blog_posts.find_one({"slug": slug})
+    if existing:
+        slug = f"{slug}-{post_id[:8]}"
+    post_doc = {
+        "id": post_id,
+        "title": post_data.title,
+        "slug": slug,
+        "content": post_data.content,
+        "excerpt": post_data.excerpt or post_data.content[:160],
+        "cover_image_url": post_data.cover_image_url,
+        "meta_description": post_data.meta_description or post_data.excerpt or post_data.content[:160],
+        "status": post_data.status,
+        "author": admin["name"],
+        "author_id": admin["id"],
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.blog_posts.insert_one(post_doc)
+    return {"post_id": post_id, "slug": slug, "status": "success"}
+
+@api_router.put("/admin/blog/{post_id}")
+async def update_blog_post(post_id: str, post_data: BlogPostCreate, admin: dict = Depends(get_admin_user)):
+    slug = _re.sub(r'[^a-z0-9-]', '', post_data.title.lower().replace(' ', '-'))
+    result = await db.blog_posts.update_one(
+        {"id": post_id},
+        {"$set": {
+            "title": post_data.title,
+            "slug": slug,
+            "content": post_data.content,
+            "excerpt": post_data.excerpt or post_data.content[:160],
+            "cover_image_url": post_data.cover_image_url,
+            "meta_description": post_data.meta_description or post_data.excerpt or post_data.content[:160],
+            "status": post_data.status,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return {"status": "success"}
+
+@api_router.delete("/admin/blog/{post_id}")
+async def delete_blog_post(post_id: str, admin: dict = Depends(get_admin_user)):
+    result = await db.blog_posts.delete_one({"id": post_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return {"status": "success"}
+
 app.include_router(api_router)
 
 app.add_middleware(

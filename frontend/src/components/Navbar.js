@@ -78,6 +78,9 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
               <Link to="/order" className="text-slate-700 hover:text-blue-600 font-medium text-sm lg:text-base" data-testid="order-nav-link">
                 ORDER NOW
               </Link>
+              <Link to="/blog" className="text-slate-700 hover:text-blue-600 font-medium text-sm lg:text-base">
+                BLOG
+              </Link>
               {user && user.role === 'customer' && (
                 <Link to="/dashboard" className="text-slate-700 hover:text-blue-600 font-medium text-sm lg:text-base">
                   MY ORDERS
@@ -172,6 +175,13 @@ export const Navbar = ({ cartItemsCount = 0 }) => {
                   onClick={() => setMobileMenuOpen(false)}
                 >
                   ORDER NOW
+                </Link>
+                <Link
+                  to="/blog"
+                  className="text-slate-700 hover:text-blue-600 font-medium py-2"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  BLOG
                 </Link>
                 {user && user.role === 'customer' && (
                   <Link
