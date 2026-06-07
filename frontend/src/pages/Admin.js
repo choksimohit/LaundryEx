@@ -15,7 +15,7 @@ import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
 import { getUser } from '../utils/auth';
-import { GripVertical, MapPin, Clock, MessageSquare, Download, PenLine, Trash2, Eye, EyeOff } from 'lucide-react';
+import { GripVertical, MapPin, Clock, MessageSquare, Download, PenLine, Trash2, Eye, EyeOff, Users, TrendingUp } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -108,6 +108,8 @@ const SortableSubcategoryItem = ({ subcat }) => {
 export const Admin = () => {
   const [stats, setStats] = useState(null);
   const [orders, setOrders] = useState([]);
+  const [users, setUsers] = useState([]);
+  const [usersLoaded, setUsersLoaded] = useState(false);
   const [business, setBusiness] = useState(null);
   const [adminCategories, setAdminCategories] = useState([]);
   const [adminSubcategories, setAdminSubcategories] = useState([]);
@@ -154,6 +156,16 @@ export const Admin = () => {
       setOrders(response.data);
     } catch (error) {
       toast.error('Failed to load orders');
+    }
+  };
+
+  const loadUsers = async () => {
+    try {
+      const response = await api.get('/admin/users');
+      setUsers(response.data);
+      setUsersLoaded(true);
+    } catch (error) {
+      toast.error('Failed to load users');
     }
   };
 
@@ -346,7 +358,7 @@ export const Admin = () => {
         <h1 className="text-2xl md:text-3xl lg:text-5xl font-semibold tracking-tight mb-6 md:mb-8 text-blue-600">Admin Panel</h1>
 
         {stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8" data-testid="admin-stats">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 md:gap-6 mb-6 md:mb-8" data-testid="admin-stats">
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Total Orders</p>
               <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-orders">{stats.total_orders}</p>
@@ -354,6 +366,10 @@ export const Admin = () => {
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Total Revenue</p>
               <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-revenue">£{stats.total_revenue.toFixed(2)}</p>
+            </div>
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <p className="text-sm text-slate-600 mb-2">Registered Users</p>
+              <p className="text-3xl font-bold text-blue-600" data-testid="stat-total-users">{stats.total_users ?? 0}</p>
             </div>
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
               <p className="text-sm text-slate-600 mb-2">Businesses</p>
@@ -367,8 +383,9 @@ export const Admin = () => {
         )}
 
         <Tabs defaultValue="orders" className="space-y-6">
-          <TabsList className="bg-white rounded-full p-2 border border-slate-200">
+          <TabsList className="bg-white rounded-full p-2 border border-slate-200 flex-wrap gap-1">
             <TabsTrigger value="orders" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-orders">Orders</TabsTrigger>
+            <TabsTrigger value="users" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-users" onClick={() => { if (!usersLoaded) loadUsers(); }}>Users</TabsTrigger>
             <TabsTrigger value="products" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-products">Products</TabsTrigger>
             <TabsTrigger value="categories" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-categories">Categories</TabsTrigger>
             <TabsTrigger value="businesses" className="rounded-full text-slate-700 data-[state=active]:bg-blue-600 data-[state=active]:text-white" data-testid="tab-businesses">Business Settings</TabsTrigger>
@@ -465,6 +482,67 @@ export const Admin = () => {
                 </div>
               </div>
             ))}
+          </TabsContent>
+
+          <TabsContent value="users" className="space-y-6" data-testid="users-tab-content">
+            <div className="bg-white rounded-2xl p-6 border border-slate-200">
+              <div className="flex justify-between items-center mb-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-blue-600">Registered Users</h2>
+                  <p className="text-sm text-slate-500 mt-1">{users.length} total customers</p>
+                </div>
+              </div>
+
+              {users.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="h-12 w-12 text-slate-200 mx-auto mb-3" />
+                  <p className="text-slate-400">No registered users yet.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {users.map(u => (
+                    <div key={u.id} className="border border-slate-100 rounded-xl p-4 hover:border-blue-200 transition-colors">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <p className="font-semibold text-slate-800">{u.name || '—'}</p>
+                          <p className="text-sm text-slate-500">{u.email}</p>
+                          <p className="text-sm text-slate-500">{u.phone || '—'}</p>
+                          {u.last_address && (
+                            <div className="flex items-start gap-1.5 pt-1">
+                              <MapPin className="h-3.5 w-3.5 text-blue-400 mt-0.5 shrink-0" />
+                              <p className="text-sm text-slate-500">{u.last_address}{u.last_pin_code ? `, ${u.last_pin_code}` : ''}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex gap-4 shrink-0 text-center">
+                          <div className="bg-blue-50 rounded-xl px-4 py-3 min-w-[80px]">
+                            <p className="text-2xl font-bold text-blue-600">{u.total_orders}</p>
+                            <p className="text-xs text-slate-500 mt-0.5">Orders</p>
+                          </div>
+                          {u.orders_per_month !== null && u.orders_per_month !== undefined && (
+                            <div className="bg-green-50 rounded-xl px-4 py-3 min-w-[80px]">
+                              <div className="flex items-center justify-center gap-1">
+                                <TrendingUp className="h-4 w-4 text-green-600" />
+                                <p className="text-2xl font-bold text-green-600">{u.orders_per_month}</p>
+                              </div>
+                              <p className="text-xs text-slate-500 mt-0.5">/ month</p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3 mt-3 pt-3 border-t border-slate-50 text-xs text-slate-400">
+                        <span>Joined {new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        {u.last_order && (
+                          <span>· Last order {new Date(u.last_order).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
 
           <TabsContent value="businesses" className="space-y-6" data-testid="businesses-tab-content">

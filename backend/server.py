@@ -587,15 +587,70 @@ async def get_admin_stats(admin: dict = Depends(get_admin_user)):
     ]).to_list(1)
     total_businesses = await db.businesses.count_documents({})
     total_products = await db.products.count_documents({})
-    
+    total_users = await db.users.count_documents({"role": {"$nin": ["business_admin", "platform_admin", "super_admin"]}})
+
     revenue = total_revenue[0]["total"] if total_revenue else 0
-    
+
     return {
         "total_orders": total_orders,
         "total_revenue": revenue,
         "total_businesses": total_businesses,
-        "total_products": total_products
+        "total_products": total_products,
+        "total_users": total_users,
     }
+
+@api_router.get("/admin/users")
+async def get_admin_users(admin: dict = Depends(get_admin_user)):
+    users = await db.users.find(
+        {"role": {"$nin": ["business_admin", "platform_admin", "super_admin"]}},
+        {"_id": 0, "password": 0}
+    ).sort("created_at", -1).to_list(1000)
+
+    # Aggregate order stats per user
+    order_pipeline = [
+        {"$group": {
+            "_id": "$user_id",
+            "total_orders": {"$sum": 1},
+            "first_order": {"$min": "$created_at"},
+            "last_order": {"$max": "$created_at"},
+            "last_address": {"$last": "$address"},
+            "last_pin_code": {"$last": "$pin_code"},
+        }}
+    ]
+    order_stats = await db.orders.aggregate(order_pipeline).to_list(1000)
+    stats_by_user = {s["_id"]: s for s in order_stats}
+
+    now = datetime.now(timezone.utc)
+    result = []
+    for u in users:
+        uid = u.get("id")
+        s = stats_by_user.get(uid, {})
+        total_orders = s.get("total_orders", 0)
+
+        # Orders per month since first order
+        orders_per_month = None
+        if total_orders > 0 and s.get("first_order"):
+            try:
+                first_dt = datetime.fromisoformat(s["first_order"].replace("Z", "+00:00"))
+                months = max(1, (now - first_dt).days / 30)
+                orders_per_month = round(total_orders / months, 1)
+            except Exception:
+                pass
+
+        result.append({
+            "id": uid,
+            "name": u.get("name", ""),
+            "email": u.get("email", ""),
+            "phone": u.get("phone", ""),
+            "created_at": u.get("created_at", ""),
+            "total_orders": total_orders,
+            "last_order": s.get("last_order"),
+            "last_address": s.get("last_address", ""),
+            "last_pin_code": s.get("last_pin_code", ""),
+            "orders_per_month": orders_per_month,
+        })
+
+    return result
 
 @api_router.get("/admin/categories")
 async def get_admin_categories(admin: dict = Depends(get_admin_user)):
