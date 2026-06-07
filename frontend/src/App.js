@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Analytics } from '@vercel/analytics/react';
 import { Toaster } from './components/ui/sonner';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
@@ -79,6 +80,7 @@ function App() {
         </div>
         <Footer />
         <Toaster position="top-center" />
+        <Analytics />
       </div>
     </BrowserRouter>
   );
