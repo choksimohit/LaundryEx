@@ -15,7 +15,7 @@ import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
 import { getUser } from '../utils/auth';
-import { GripVertical, MapPin, Clock, MessageSquare, Download, PenLine, Trash2, Eye, EyeOff, Users, TrendingUp } from 'lucide-react';
+import { GripVertical, MapPin, Clock, MessageSquare, Download, PenLine, Trash2, Eye, EyeOff, Users, TrendingUp, Search } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -111,6 +111,8 @@ export const Admin = () => {
   const [users, setUsers] = useState([]);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [userSort, setUserSort] = useState({ key: 'created_at', dir: 'desc' });
+  const [orderSort, setOrderSort] = useState({ key: 'created_at', dir: 'desc' });
+  const [orderFilter, setOrderFilter] = useState({ status: '', search: '' });
   const [business, setBusiness] = useState(null);
   const [adminCategories, setAdminCategories] = useState([]);
   const [adminSubcategories, setAdminSubcategories] = useState([]);
@@ -394,7 +396,77 @@ export const Admin = () => {
           </TabsList>
 
           <TabsContent value="orders" className="space-y-6" data-testid="orders-tab-content">
-            {orders.map(order => (
+            {/* Sort & Filter bar */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+              <div className="relative flex-1 min-w-0">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search by customer name, email or order #..."
+                  value={orderFilter.search}
+                  onChange={e => setOrderFilter(f => ({ ...f, search: e.target.value }))}
+                  className="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <select
+                value={orderFilter.status}
+                onChange={e => setOrderFilter(f => ({ ...f, status: e.target.value }))}
+                className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+              >
+                <option value="">All Statuses</option>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="processing">Processing</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+              <select
+                value={`${orderSort.key}:${orderSort.dir}`}
+                onChange={e => { const [key, dir] = e.target.value.split(':'); setOrderSort({ key, dir }); }}
+                className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 shrink-0"
+              >
+                <option value="created_at:desc">Date (newest)</option>
+                <option value="created_at:asc">Date (oldest)</option>
+                <option value="order_number:desc">Order # (high)</option>
+                <option value="order_number:asc">Order # (low)</option>
+                <option value="total_amount:desc">Amount (highest)</option>
+                <option value="total_amount:asc">Amount (lowest)</option>
+                <option value="user_name:asc">Customer (A–Z)</option>
+                <option value="user_name:desc">Customer (Z–A)</option>
+                <option value="pickup_date:asc">Pickup (soonest)</option>
+                <option value="pickup_date:desc">Pickup (latest)</option>
+              </select>
+              {(orderFilter.status || orderFilter.search) && (
+                <button
+                  onClick={() => setOrderFilter({ status: '', search: '' })}
+                  className="text-sm text-slate-400 hover:text-slate-600 shrink-0 underline"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
+
+            {(() => {
+              const q = orderFilter.search.toLowerCase();
+              const filtered = orders.filter(o => {
+                const matchStatus = !orderFilter.status || o.status === orderFilter.status;
+                const matchSearch = !q || (o.user_name || '').toLowerCase().includes(q) || (o.user_email || '').toLowerCase().includes(q) || String(o.order_number).includes(q);
+                return matchStatus && matchSearch;
+              });
+              const sorted = [...filtered].sort((a, b) => {
+                const { key, dir } = orderSort;
+                let av = a[key], bv = b[key];
+                if (av == null) av = '';
+                if (bv == null) bv = '';
+                if (typeof av === 'string' && typeof bv === 'string') return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+                return dir === 'asc' ? av - bv : bv - av;
+              });
+              if (sorted.length === 0) return (
+                <div className="text-center py-12 bg-white rounded-2xl border border-slate-200">
+                  <p className="text-slate-400">No orders match your filters.</p>
+                </div>
+              );
+              return sorted.map(order => (
               <div key={order.id} className="bg-white rounded-2xl p-6 border border-slate-200" data-testid={`admin-order-${order.id}`}>
                 <div className="flex justify-between items-start mb-4">
                   <div>
@@ -482,7 +554,8 @@ export const Admin = () => {
                   </div>
                 </div>
               </div>
-            ))}
+            ));
+            })()}
           </TabsContent>
 
           <TabsContent value="users" className="space-y-6" data-testid="users-tab-content">
