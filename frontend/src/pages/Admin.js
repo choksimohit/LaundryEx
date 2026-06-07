@@ -110,6 +110,7 @@ export const Admin = () => {
   const [orders, setOrders] = useState([]);
   const [users, setUsers] = useState([]);
   const [usersLoaded, setUsersLoaded] = useState(false);
+  const [userSort, setUserSort] = useState({ key: 'created_at', dir: 'desc' });
   const [business, setBusiness] = useState(null);
   const [adminCategories, setAdminCategories] = useState([]);
   const [adminSubcategories, setAdminSubcategories] = useState([]);
@@ -486,11 +487,35 @@ export const Admin = () => {
 
           <TabsContent value="users" className="space-y-6" data-testid="users-tab-content">
             <div className="bg-white rounded-2xl p-6 border border-slate-200">
-              <div className="flex justify-between items-center mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
                 <div>
                   <h2 className="text-xl font-semibold text-blue-600">Registered Users</h2>
                   <p className="text-sm text-slate-500 mt-1">{users.length} total customers</p>
                 </div>
+                {users.length > 0 && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-slate-500 shrink-0">Sort by</span>
+                    <select
+                      value={`${userSort.key}:${userSort.dir}`}
+                      onChange={e => {
+                        const [key, dir] = e.target.value.split(':');
+                        setUserSort({ key, dir });
+                      }}
+                      className="border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="created_at:desc">Date Joined (newest)</option>
+                      <option value="created_at:asc">Date Joined (oldest)</option>
+                      <option value="name:asc">Name (A–Z)</option>
+                      <option value="name:desc">Name (Z–A)</option>
+                      <option value="total_orders:desc">Total Orders (most)</option>
+                      <option value="total_orders:asc">Total Orders (least)</option>
+                      <option value="last_order:desc">Last Order (recent)</option>
+                      <option value="last_order:asc">Last Order (oldest)</option>
+                      <option value="orders_per_month:desc">Orders/Month (highest)</option>
+                      <option value="orders_per_month:asc">Orders/Month (lowest)</option>
+                    </select>
+                  </div>
+                )}
               </div>
 
               {users.length === 0 ? (
@@ -500,7 +525,16 @@ export const Admin = () => {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {users.map(u => (
+                  {[...users].sort((a, b) => {
+                    const { key, dir } = userSort;
+                    let av = a[key], bv = b[key];
+                    if (av == null) av = dir === 'asc' ? Infinity : -Infinity;
+                    if (bv == null) bv = dir === 'asc' ? Infinity : -Infinity;
+                    if (typeof av === 'string' && typeof bv === 'string') {
+                      return dir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+                    }
+                    return dir === 'asc' ? av - bv : bv - av;
+                  }).map(u => (
                     <div key={u.id} className="border border-slate-100 rounded-xl p-4 hover:border-blue-200 transition-colors">
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-3">
                         <div className="flex-1 min-w-0 space-y-1">
@@ -520,7 +554,7 @@ export const Admin = () => {
                             <p className="text-2xl font-bold text-blue-600">{u.total_orders}</p>
                             <p className="text-xs text-slate-500 mt-0.5">Orders</p>
                           </div>
-                          {u.orders_per_month !== null && u.orders_per_month !== undefined && (
+                          {u.orders_per_month != null && (
                             <div className="bg-green-50 rounded-xl px-4 py-3 min-w-[80px]">
                               <div className="flex items-center justify-center gap-1">
                                 <TrendingUp className="h-4 w-4 text-green-600" />
