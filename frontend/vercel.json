@@ -1,12 +1,6 @@
 {
   "trailingSlash": false,
   "redirects": [
-    {
-      "source": "/:path(.*)",
-      "has": [{ "type": "host", "value": "www.laundry-express.co.uk" }],
-      "destination": "https://laundry-express.co.uk/:path",
-      "permanent": true
-    },
     { "source": "/about", "destination": "/", "permanent": true },
     { "source": "/pricing", "destination": "/order", "permanent": true },
     { "source": "/product/:slug*", "destination": "/order", "permanent": true }
