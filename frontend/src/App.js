@@ -18,6 +18,8 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { ResetPassword } from './pages/ResetPassword';
 import { Blog } from './pages/Blog';
 import { BlogPost } from './pages/BlogPost';
+import { NotFound } from './pages/NotFound';
+import { Seo } from './components/Seo';
 import { isAuthenticated, getUser } from './utils/auth';
 
 const PrivateRoute = ({ children, adminOnly = false }) => {
@@ -56,6 +58,7 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Seo />
       <div className="min-h-screen flex flex-col">
         <Navbar cartItemsCount={cartItemsCount} />
         <div className="flex-1">
@@ -75,6 +78,7 @@ function App() {
             <Route path="/sitemap" element={<Sitemap />} />
             <Route path="/blog" element={<Blog />} />
             <Route path="/blog/:slug" element={<BlogPost />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </div>
         <Footer />

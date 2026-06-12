@@ -832,16 +832,28 @@ async def sitemap_xml():
         {"loc": "/", "priority": "1.0", "changefreq": "weekly"},
         {"loc": "/services", "priority": "0.9", "changefreq": "weekly"},
         {"loc": "/order", "priority": "0.9", "changefreq": "weekly"},
+        {"loc": "/blog", "priority": "0.8", "changefreq": "weekly"},
         {"loc": "/login", "priority": "0.5", "changefreq": "monthly"},
         {"loc": "/register", "priority": "0.5", "changefreq": "monthly"},
         {"loc": "/sitemap", "priority": "0.3", "changefreq": "monthly"},
     ]
+    posts = await db.blog_posts.find(
+        {"status": "published"}, {"_id": 0, "slug": 1, "updated_at": 1, "created_at": 1}
+    ).to_list(1000)
     urls = ""
     for p in pages:
         urls += f"""  <url>
     <loc>{base_url}{p['loc']}</loc>
     <changefreq>{p['changefreq']}</changefreq>
     <priority>{p['priority']}</priority>
+  </url>\n"""
+    for post in posts:
+        lastmod = str(post.get("updated_at") or post.get("created_at") or "")[:10]
+        lastmod_tag = f"\n    <lastmod>{lastmod}</lastmod>" if lastmod else ""
+        urls += f"""  <url>
+    <loc>{base_url}/blog/{post['slug']}</loc>{lastmod_tag}
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
   </url>\n"""
     xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

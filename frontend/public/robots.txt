@@ -1,0 +1,8 @@
+User-agent: *
+Disallow: /admin
+Disallow: /dashboard
+Disallow: /cart
+Disallow: /checkout
+Disallow: /order-confirmation/
+
+Sitemap: https://laundry-express.co.uk/sitemap.xml
