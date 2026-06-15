@@ -846,11 +846,11 @@ async def find_place_id():
                     "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
                     "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.rating"
                 },
-                json={"textQuery": "LAUNDRY EXPRESS COLCHESTER", "locationBias": {"circle": {"center": {"latitude": 51.8815112, "longitude": 0.8581229}, "radius": 500.0}}}
+                json={"textQuery": "Laundry Express Colchester Essex"}
             )
             data = resp.json()
             places = data.get("places", [])
-            return {"places": [{"id": p.get("id"), "name": p.get("displayName", {}).get("text"), "address": p.get("formattedAddress"), "rating": p.get("rating")} for p in places]}
+            return {"status": resp.status_code, "raw": data, "places": [{"id": p.get("id"), "name": p.get("displayName", {}).get("text"), "address": p.get("formattedAddress"), "rating": p.get("rating")} for p in places]}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
