@@ -834,8 +834,8 @@ GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
 # Place ID from: https://www.google.com/maps/place/LAUNDRY+EXPRESS+COLCHESTER
 GOOGLE_PLACE_ID = os.environ.get("GOOGLE_PLACE_ID", "")
 
-@api_router.get("/admin/find-place-id")
-async def find_place_id(admin: dict = Depends(get_admin_user)):
+@api_router.get("/find-place-id")
+async def find_place_id():
     if not GOOGLE_PLACES_API_KEY:
         raise HTTPException(status_code=400, detail="GOOGLE_PLACES_API_KEY not set")
     try:
