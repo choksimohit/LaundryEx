@@ -454,6 +454,77 @@ async def send_admin_order_notification(order_data: Dict):
         return {"status": "error", "message": str(e)}
 
 
+async def send_admin_new_user_notification(user_name: str, user_email: str, user_phone: str = ""):
+    phone_row = f"""
+                                        <tr>
+                                            <td style="padding:8px 0; color:#64748b; font-size:14px; border-top:1px solid #e2e8f0;">Phone</td>
+                                            <td style="padding:8px 0; color:#1e293b; border-top:1px solid #e2e8f0;"><a href="tel:{user_phone}" style="color:#0d9488; text-decoration:none;">{user_phone}</a></td>
+                                        </tr>""" if user_phone else ""
+    try:
+        html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+        <body style="margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; background-color:#f8fafc;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 20px;">
+                <tr><td align="center">
+                    <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+                        <tr>
+                            <td style="background:linear-gradient(135deg,#0f766e 0%,#0d9488 100%); padding:40px; text-align:center;">
+                                <div style="font-size:48px; margin-bottom:12px;">👤</div>
+                                <h1 style="margin:0; color:#ffffff; font-size:28px; font-weight:600;">New User Registered</h1>
+                                <p style="margin:12px 0 0 0; color:#ccfbf1; font-size:14px;">A new customer has signed up on Laundry Express</p>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="padding:40px;">
+                                <div style="background-color:#f0fdfa; border-left:4px solid #0d9488; padding:16px; border-radius:4px; margin-bottom:32px;">
+                                    <div style="font-weight:600; color:#134e4a; margin-bottom:4px;">New account created</div>
+                                    <div style="color:#134e4a; font-size:14px;">You may want to reach out and welcome them.</div>
+                                </div>
+                                <div style="background-color:#f8fafc; border-radius:12px; padding:24px; margin-bottom:32px;">
+                                    <h3 style="margin:0 0 16px 0; font-size:18px; color:#1e293b;">Customer Details</h3>
+                                    <table width="100%" cellpadding="0" cellspacing="0">
+                                        <tr>
+                                            <td style="padding:8px 0; color:#64748b; font-size:14px; width:40%;">Name</td>
+                                            <td style="padding:8px 0; color:#1e293b; font-weight:600;">{user_name}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style="padding:8px 0; color:#64748b; font-size:14px; border-top:1px solid #e2e8f0;">Email</td>
+                                            <td style="padding:8px 0; color:#1e293b; border-top:1px solid #e2e8f0;"><a href="mailto:{user_email}" style="color:#0d9488; text-decoration:none;">{user_email}</a></td>
+                                        </tr>{phone_row}
+                                    </table>
+                                </div>
+                                <div style="text-align:center;">
+                                    <a href="https://laundry-express.co.uk/admin" style="display:inline-block; background:#0d9488; color:#ffffff; text-decoration:none; padding:14px 32px; border-radius:50px; font-weight:600; font-size:15px;">View in Admin Panel</a>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="background-color:#f8fafc; padding:24px; text-align:center; border-top:1px solid #e2e8f0;">
+                                <p style="margin:0; color:#94a3b8; font-size:13px;">Automated notification from Laundry Express</p>
+                            </td>
+                        </tr>
+                    </table>
+                </td></tr>
+            </table>
+        </body>
+        </html>
+        """
+        params = {
+            "from": SENDER_EMAIL,
+            "to": [ADMIN_EMAIL],
+            "subject": f"👤 New User Registered: {user_name} | Laundry Express",
+            "html": html
+        }
+        email = await asyncio.to_thread(resend.Emails.send, params)
+        logger.info(f"Admin new-user notification sent for {user_email}, email_id: {email.get('id')}")
+        return {"status": "success", "email_id": email.get("id")}
+    except Exception as e:
+        logger.error(f"Failed to send admin new-user notification: {str(e)}")
+        return {"status": "error", "message": str(e)}
+
+
 def send_password_reset_email(to_email: str, name: str, reset_link: str):
     html = f"""
     <!DOCTYPE html>

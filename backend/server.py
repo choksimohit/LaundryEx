@@ -16,7 +16,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 import stripe
 import httpx
-from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification
+from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification, send_admin_new_user_notification
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -195,7 +195,12 @@ async def register(user_data: UserRegister):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.users.insert_one(user_doc)
-    
+
+    try:
+        await send_admin_new_user_notification(user_data.name, user_data.email, user_data.phone or "")
+    except Exception as e:
+        logger.error(f"Failed to send admin new-user notification: {e}")
+
     token = create_access_token({"sub": user_id, "email": user_data.email, "role": "customer"})
     return {"token": token, "user": {"id": user_id, "email": user_data.email, "name": user_data.name, "role": "customer"}}
 
