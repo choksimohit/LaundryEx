@@ -32,6 +32,7 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { RichTextEditor } from '../components/RichTextEditor';
 
 const SortableCategoryItem = ({ category }) => {
   const {
@@ -891,14 +892,12 @@ export const Admin = () => {
                   </div>
                   <div>
                     <Label>Content *</Label>
-                    <textarea
-                      value={blogForm.content}
-                      onChange={e => setBlogForm({...blogForm, content: e.target.value})}
-                      required
-                      placeholder="Write your blog post here. Use blank lines to separate paragraphs."
-                      rows={16}
-                      className="w-full mt-2 px-3 py-2 border border-slate-200 rounded-xl text-sm resize-y focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono"
-                    />
+                    <div className="mt-2">
+                      <RichTextEditor
+                        value={blogForm.content}
+                        onChange={val => setBlogForm({...blogForm, content: val})}
+                      />
+                    </div>
                   </div>
                   <div className="flex items-center gap-4 pt-2">
                     <Button type="submit" disabled={blogLoading} className="rounded-full bg-blue-600 hover:bg-blue-700 px-8">

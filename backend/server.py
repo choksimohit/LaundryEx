@@ -830,6 +830,57 @@ async def submit_indexnow(data: dict, admin: dict = Depends(get_admin_user)):
     
     return {"submitted_urls": len(urls), "results": results}
 
+GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
+# Place ID from: https://www.google.com/maps/place/LAUNDRY+EXPRESS+COLCHESTER
+GOOGLE_PLACE_ID = os.environ.get("GOOGLE_PLACE_ID", "")
+
+@api_router.get("/reviews")
+async def get_google_reviews():
+    # Return cached reviews if fresh (< 24 hours old)
+    cached = await db.cache.find_one({"key": "google_reviews"}, {"_id": 0})
+    if cached:
+        age = (datetime.now(timezone.utc) - datetime.fromisoformat(cached["fetched_at"])).total_seconds()
+        if age < 86400:
+            return {"reviews": cached["reviews"], "rating": cached.get("rating"), "total_ratings": cached.get("total_ratings"), "source": "cache"}
+
+    if not GOOGLE_PLACES_API_KEY or not GOOGLE_PLACE_ID:
+        return {"reviews": [], "rating": None, "total_ratings": None, "source": "unconfigured"}
+
+    try:
+        async with httpx.AsyncClient(timeout=10) as client_http:
+            url = f"https://places.googleapis.com/v1/places/{GOOGLE_PLACE_ID}"
+            headers = {
+                "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
+                "X-Goog-FieldMask": "reviews,rating,userRatingCount,displayName"
+            }
+            resp = await client_http.get(url, headers=headers)
+            resp.raise_for_status()
+            data = resp.json()
+
+        reviews = []
+        for r in data.get("reviews", []):
+            reviews.append({
+                "author": r.get("authorAttribution", {}).get("displayName", "Anonymous"),
+                "author_photo": r.get("authorAttribution", {}).get("photoUri", ""),
+                "rating": r.get("rating", 5),
+                "text": r.get("text", {}).get("text", ""),
+                "relative_time": r.get("relativePublishTimeDescription", ""),
+            })
+
+        payload = {
+            "key": "google_reviews",
+            "reviews": reviews,
+            "rating": data.get("rating"),
+            "total_ratings": data.get("userRatingCount"),
+            "fetched_at": datetime.now(timezone.utc).isoformat(),
+        }
+        await db.cache.update_one({"key": "google_reviews"}, {"$set": payload}, upsert=True)
+        return {"reviews": reviews, "rating": data.get("rating"), "total_ratings": data.get("userRatingCount"), "source": "live"}
+    except Exception as e:
+        logger.error(f"Failed to fetch Google reviews: {e}")
+        return {"reviews": [], "rating": None, "total_ratings": None, "source": "error"}
+
+
 @api_router.get("/sitemap-xml")
 async def sitemap_xml():
     base_url = os.environ.get("BASE_URL", "https://laundry-express.co.uk")

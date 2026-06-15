@@ -63,16 +63,10 @@ export const BlogPost = () => {
             </span>
           </div>
 
-          {/* Render content — supports plain text with line breaks */}
-          <div className="prose prose-slate max-w-none">
-            {post.content.split('\n').map((para, i) =>
-              para.trim() ? (
-                <p key={i} className="text-slate-600 leading-relaxed mb-4">{para}</p>
-              ) : (
-                <br key={i} />
-              )
-            )}
-          </div>
+          <div
+            className="prose prose-slate max-w-none prose-headings:text-slate-800 prose-p:text-slate-600 prose-p:leading-relaxed prose-a:text-blue-600 prose-strong:text-slate-800 prose-ul:text-slate-600 prose-ol:text-slate-600 prose-blockquote:border-blue-400 prose-blockquote:text-slate-500 prose-code:text-blue-600 prose-code:bg-blue-50 prose-code:px-1 prose-code:rounded"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
         </article>
 
         {/* CTA */}
