@@ -44,7 +44,7 @@ export const BlogPost = () => {
         </div>
       )}
 
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         <Link to="/blog" className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-blue-600 mb-8 transition-colors">
           <ArrowLeft className="h-4 w-4" /> Back to all articles
         </Link>
