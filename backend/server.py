@@ -834,26 +834,6 @@ GOOGLE_PLACES_API_KEY = os.environ.get("GOOGLE_PLACES_API_KEY", "")
 # Place ID from: https://www.google.com/maps/place/LAUNDRY+EXPRESS+COLCHESTER
 GOOGLE_PLACE_ID = os.environ.get("GOOGLE_PLACE_ID", "")
 
-@api_router.get("/find-place-id")
-async def find_place_id():
-    if not GOOGLE_PLACES_API_KEY:
-        raise HTTPException(status_code=400, detail="GOOGLE_PLACES_API_KEY not set")
-    try:
-        async with httpx.AsyncClient(timeout=10) as c:
-            resp = await c.post(
-                "https://places.googleapis.com/v1/places:searchText",
-                headers={
-                    "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
-                    "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.rating"
-                },
-                json={"textQuery": "Laundry Express", "locationBias": {"circle": {"center": {"latitude": 51.8815112, "longitude": 0.8581229}, "radius": 50.0}}}
-            )
-            data = resp.json()
-            places = data.get("places", [])
-            return {"status": resp.status_code, "raw": data, "places": [{"id": p.get("id"), "name": p.get("displayName", {}).get("text"), "address": p.get("formattedAddress"), "rating": p.get("rating")} for p in places]}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
 
 @api_router.get("/reviews")
 async def get_google_reviews():
