@@ -846,7 +846,7 @@ async def find_place_id():
                     "X-Goog-Api-Key": GOOGLE_PLACES_API_KEY,
                     "X-Goog-FieldMask": "places.id,places.displayName,places.formattedAddress,places.rating"
                 },
-                json={"textQuery": "laundry express colchester", "locationRestriction": {"rectangle": {"low": {"latitude": 51.85, "longitude": 0.82}, "high": {"latitude": 51.92, "longitude": 0.90}}}}
+                json={"textQuery": "Laundry Express", "locationBias": {"circle": {"center": {"latitude": 51.8815112, "longitude": 0.8581229}, "radius": 50.0}}}
             )
             data = resp.json()
             places = data.get("places", [])
