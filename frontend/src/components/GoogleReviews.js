@@ -126,7 +126,7 @@ export const GoogleReviews = () => {
   }, []);
 
   return (
-    <section className="py-16 px-6" style={{ background: 'linear-gradient(to bottom, #fdf6f0, #ffffff)' }}>
+    <section className="py-16 px-6 bg-blue-900">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-10">
           <div className="inline-flex items-center gap-2 bg-white border border-stone-200 rounded-full px-4 py-1.5 mb-4 shadow-sm">
@@ -134,10 +134,10 @@ export const GoogleReviews = () => {
             <span className="text-stone-500 font-medium text-sm">Google Reviews</span>
           </div>
           <div className="flex items-center justify-center gap-3">
-            <span className="text-5xl font-bold text-stone-900">{Number(overallRating).toFixed(1)}</span>
+            <span className="text-5xl font-bold text-white">{Number(overallRating).toFixed(1)}</span>
             <div className="text-left">
               <StarRating rating={Math.round(overallRating)} />
-              <p className="text-sm text-stone-400 mt-1">
+              <p className="text-sm text-blue-200 mt-1">
                 {totalRatings ? `${totalRatings.toLocaleString()} verified reviews` : 'Verified reviews'}
               </p>
             </div>
@@ -164,7 +164,7 @@ export const GoogleReviews = () => {
             href="https://www.google.com/maps/place/?q=place_id:ChIJ74oyJcw_dAYRUtIGXk6HGzM"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-stone-500 hover:text-stone-700 font-medium text-sm transition-colors"
+            className="inline-flex items-center gap-2 text-blue-200 hover:text-white font-medium text-sm transition-colors"
           >
             <img src="https://www.google.com/favicon.ico" alt="" className="w-4 h-4" />
             See all reviews on Google
