@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
@@ -112,6 +113,7 @@ export const Admin = () => {
   const [users, setUsers] = useState([]);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [userSort, setUserSort] = useState({ key: 'created_at', dir: 'desc' });
+  const [reviewModal, setReviewModal] = useState({ open: false, loading: false, sending: false, eligible: [] });
   const [orderSort, setOrderSort] = useState({ key: 'created_at', dir: 'desc' });
   const [orderFilter, setOrderFilter] = useState({ status: '', search: '' });
   const [business, setBusiness] = useState(null);
@@ -568,12 +570,13 @@ export const Admin = () => {
                 </div>
                 <Button
                   onClick={async () => {
-                    if (!window.confirm('Send a Google review request email to all customers who have placed at least one order?')) return;
+                    setReviewModal(m => ({ ...m, open: true, loading: true, eligible: [] }));
                     try {
-                      const res = await api.post('/admin/send-review-request');
-                      toast.success(res.data.message);
+                      const res = await api.get('/admin/review-request-preview');
+                      setReviewModal(m => ({ ...m, loading: false, eligible: res.data.eligible }));
                     } catch {
-                      toast.error('Failed to send review emails');
+                      toast.error('Failed to load preview');
+                      setReviewModal(m => ({ ...m, open: false, loading: false }));
                     }
                   }}
                   className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-2 shrink-0"
@@ -581,6 +584,70 @@ export const Admin = () => {
                   <Star className="h-4 w-4" />
                   Request Google Reviews
                 </Button>
+
+                <Dialog open={reviewModal.open} onOpenChange={open => setReviewModal(m => ({ ...m, open }))}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="flex items-center gap-2">
+                        <Star className="h-5 w-5 text-amber-500" />
+                        Send Google Review Request
+                      </DialogTitle>
+                    </DialogHeader>
+
+                    {reviewModal.loading ? (
+                      <div className="py-8 text-center text-slate-400">Loading recipients...</div>
+                    ) : reviewModal.eligible.length === 0 ? (
+                      <div className="py-8 text-center">
+                        <p className="text-slate-500 font-medium">No eligible customers</p>
+                        <p className="text-sm text-slate-400 mt-1">All customers with orders were emailed within the last 30 days.</p>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm text-slate-500 mb-3">
+                          The following <span className="font-semibold text-slate-700">{reviewModal.eligible.length}</span> customer{reviewModal.eligible.length !== 1 ? 's' : ''} will receive a Google review request email:
+                        </p>
+                        <div className="max-h-64 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-50">
+                          {reviewModal.eligible.map((u, i) => (
+                            <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-xs shrink-0">
+                                {(u.name || '?').charAt(0).toUpperCase()}
+                              </div>
+                              <div className="min-w-0">
+                                <p className="text-sm font-medium text-slate-800 truncate">{u.name || '—'}</p>
+                                <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+
+                    <DialogFooter className="gap-2 mt-2">
+                      <Button variant="outline" onClick={() => setReviewModal(m => ({ ...m, open: false }))}>
+                        Cancel
+                      </Button>
+                      {!reviewModal.loading && reviewModal.eligible.length > 0 && (
+                        <Button
+                          className="bg-amber-500 hover:bg-amber-600 text-white"
+                          disabled={reviewModal.sending}
+                          onClick={async () => {
+                            setReviewModal(m => ({ ...m, sending: true }));
+                            try {
+                              const res = await api.post('/admin/send-review-request');
+                              toast.success(res.data.message);
+                              setReviewModal(m => ({ ...m, open: false, sending: false }));
+                            } catch {
+                              toast.error('Failed to send review emails');
+                              setReviewModal(m => ({ ...m, sending: false }));
+                            }
+                          }}
+                        >
+                          {reviewModal.sending ? 'Sending...' : `Send to ${reviewModal.eligible.length} customer${reviewModal.eligible.length !== 1 ? 's' : ''}`}
+                        </Button>
+                      )}
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
                 {users.length > 0 && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-slate-500 shrink-0">Sort by</span>
@@ -659,6 +726,12 @@ export const Admin = () => {
                         <span>Joined {new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                         {u.last_order && (
                           <span>· Last order {new Date(u.last_order).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                        )}
+                        {u.review_request_sent_at && (
+                          <span className="ml-auto flex items-center gap-1 text-amber-500">
+                            <Star className="h-3 w-3" />
+                            Review email sent {new Date(u.review_request_sent_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
                         )}
                       </div>
                     </div>

@@ -526,7 +526,7 @@ async def send_admin_new_user_notification(user_name: str, user_email: str, user
 
 
 def generate_review_request_email(user_name: str) -> str:
-    review_link = "https://search.google.com/local/writereview?placeid=ChIJ74oyJcw_dAYRUtIGXk6HGzM"
+    review_link = "https://www.google.com/maps/place/Laundry+Express+Colchester/@51.8903086,0.867185,17z/data=!3m1!4b1!4m6!3m5!1s0x6743fcc25328aef:0x331b874e5e06d252!8m2!3d51.8903053!4d0.8697599!16s%2Fg%2F11xlfw4k2h"
     first_name = user_name.split()[0] if user_name else "there"
     return f"""
     <!DOCTYPE html>

@@ -653,24 +653,79 @@ async def get_admin_users(admin: dict = Depends(get_admin_user)):
             "last_address": s.get("last_address", ""),
             "last_pin_code": s.get("last_pin_code", ""),
             "orders_per_month": orders_per_month,
+            "review_request_sent_at": u.get("review_request_sent_at"),
         })
 
     return result
 
 
+@api_router.get("/admin/review-request-preview")
+async def review_request_preview(admin: dict = Depends(get_admin_user)):
+    emails_with_orders = set(await db.orders.distinct("user_email"))
+    users = await db.users.find(
+        {"role": {"$nin": ["business_admin", "platform_admin", "super_admin"]}},
+        {"_id": 0, "name": 1, "email": 1, "review_request_sent_at": 1}
+    ).to_list(10000)
+
+    now = datetime.now(timezone.utc)
+    thirty_days_ago = now - timedelta(days=30)
+
+    eligible = []
+    for u in users:
+        if u.get("email") not in emails_with_orders:
+            continue
+        last_sent = u.get("review_request_sent_at")
+        if last_sent:
+            try:
+                last_sent_dt = datetime.fromisoformat(last_sent.replace("Z", "+00:00"))
+                if last_sent_dt > thirty_days_ago:
+                    continue
+            except Exception:
+                pass
+        eligible.append({"name": u.get("name", "—"), "email": u.get("email", "")})
+
+    return {"eligible": eligible, "count": len(eligible)}
+
+
 @api_router.post("/admin/send-review-request")
 async def send_review_request(admin: dict = Depends(get_admin_user)):
-    # Get all emails that have placed at least one order
     emails_with_orders = set(await db.orders.distinct("user_email"))
 
     users = await db.users.find(
         {"role": {"$nin": ["business_admin", "platform_admin", "super_admin"]}},
-        {"_id": 0, "id": 1, "name": 1, "email": 1}
+        {"_id": 0, "id": 1, "name": 1, "email": 1, "review_request_sent_at": 1}
     ).to_list(10000)
 
-    eligible = [u for u in users if u.get("email") in emails_with_orders]
+    now = datetime.now(timezone.utc)
+    thirty_days_ago = now - timedelta(days=30)
+
+    eligible, skipped = [], 0
+    for u in users:
+        if u.get("email") not in emails_with_orders:
+            continue
+        last_sent = u.get("review_request_sent_at")
+        if last_sent:
+            try:
+                last_sent_dt = datetime.fromisoformat(last_sent.replace("Z", "+00:00"))
+                if last_sent_dt > thirty_days_ago:
+                    skipped += 1
+                    continue
+            except Exception:
+                pass
+        eligible.append(u)
+
     result = await send_review_request_to_all_users(eligible)
-    return {"message": f"Review request sent to {result['sent']} customers.", "sent": result["sent"], "failed": result["failed"]}
+
+    if eligible:
+        await db.users.update_many(
+            {"email": {"$in": [u["email"] for u in eligible]}},
+            {"$set": {"review_request_sent_at": now.isoformat()}}
+        )
+
+    msg = f"Sent to {result['sent']} customers."
+    if skipped:
+        msg += f" {skipped} skipped (already emailed within 30 days)."
+    return {"message": msg, "sent": result["sent"], "failed": result["failed"], "skipped": skipped}
 
 
 @api_router.get("/admin/categories")

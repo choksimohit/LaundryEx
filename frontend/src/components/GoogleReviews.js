@@ -161,7 +161,7 @@ export const GoogleReviews = () => {
 
         <div className="text-center mt-6">
           <a
-            href="https://www.google.com/maps/search/?api=1&query=Laundry+Express+Colchester&query_place_id=ChIJ74oyJcw_dAYRUtIGXk6HGzM"
+            href="https://www.google.com/maps/place/Laundry+Express+Colchester/@51.8903086,0.867185,17z/data=!3m1!4b1!4m6!3m5!1s0x6743fcc25328aef:0x331b874e5e06d252!8m2!3d51.8903053!4d0.8697599!16s%2Fg%2F11xlfw4k2h"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-blue-200 hover:text-white font-medium text-sm transition-colors"
