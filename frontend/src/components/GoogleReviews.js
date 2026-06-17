@@ -153,7 +153,7 @@ export const GoogleReviews = () => {
 
         <div className="text-center mt-6">
           <a
-            href="https://www.google.com/maps/place/LAUNDRY+EXPRESS+COLCHESTER/@51.8901771,0.8696583,17z"
+            href="https://www.google.com/maps/place/?q=place_id:ChIJ74oyJcw_dAYRUtIGXk6HGzM"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-stone-500 hover:text-stone-700 font-medium text-sm transition-colors"
