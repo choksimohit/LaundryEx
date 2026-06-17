@@ -660,17 +660,15 @@ async def get_admin_users(admin: dict = Depends(get_admin_user)):
 
 @api_router.post("/admin/send-review-request")
 async def send_review_request(admin: dict = Depends(get_admin_user)):
-    # Only email users who have placed at least one order
-    order_pipeline = [{"$group": {"_id": "$user_id"}}]
-    order_stats = await db.orders.aggregate(order_pipeline).to_list(10000)
-    user_ids_with_orders = {s["_id"] for s in order_stats}
+    # Get all emails that have placed at least one order
+    emails_with_orders = set(await db.orders.distinct("user_email"))
 
     users = await db.users.find(
         {"role": {"$nin": ["business_admin", "platform_admin", "super_admin"]}},
         {"_id": 0, "id": 1, "name": 1, "email": 1}
     ).to_list(10000)
 
-    eligible = [u for u in users if u.get("id") in user_ids_with_orders and u.get("email")]
+    eligible = [u for u in users if u.get("email") in emails_with_orders]
     result = await send_review_request_to_all_users(eligible)
     return {"message": f"Review request sent to {result['sent']} customers.", "sent": result["sent"], "failed": result["failed"]}
 
