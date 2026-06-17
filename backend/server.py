@@ -692,7 +692,7 @@ class ReviewRequestBody(BaseModel):
 
 
 @api_router.post("/admin/send-review-request")
-async def send_review_request(body: ReviewRequestBody = ReviewRequestBody(), admin: dict = Depends(get_admin_user)):
+async def send_review_request(body: ReviewRequestBody, admin: dict = Depends(get_admin_user)):
     emails_with_orders = set(await db.orders.distinct("user_email"))
 
     users = await db.users.find(
