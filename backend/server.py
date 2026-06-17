@@ -16,7 +16,7 @@ from passlib.context import CryptContext
 from jose import JWTError, jwt
 import stripe
 import httpx
-from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification, send_admin_new_user_notification
+from email_service import send_order_confirmation_email, send_status_update_email, send_admin_order_notification, send_admin_new_user_notification, send_review_request_to_all_users
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -656,6 +656,24 @@ async def get_admin_users(admin: dict = Depends(get_admin_user)):
         })
 
     return result
+
+
+@api_router.post("/admin/send-review-request")
+async def send_review_request(admin: dict = Depends(get_admin_user)):
+    # Only email users who have placed at least one order
+    order_pipeline = [{"$group": {"_id": "$user_id"}}]
+    order_stats = await db.orders.aggregate(order_pipeline).to_list(10000)
+    user_ids_with_orders = {s["_id"] for s in order_stats}
+
+    users = await db.users.find(
+        {"role": {"$nin": ["business_admin", "platform_admin", "super_admin"]}},
+        {"_id": 0, "id": 1, "name": 1, "email": 1}
+    ).to_list(10000)
+
+    eligible = [u for u in users if u.get("id") in user_ids_with_orders and u.get("email")]
+    result = await send_review_request_to_all_users(eligible)
+    return {"message": f"Review request sent to {result['sent']} customers.", "sent": result["sent"], "failed": result["failed"]}
+
 
 @api_router.get("/admin/categories")
 async def get_admin_categories(admin: dict = Depends(get_admin_user)):

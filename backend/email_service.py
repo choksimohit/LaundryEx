@@ -525,6 +525,88 @@ async def send_admin_new_user_notification(user_name: str, user_email: str, user
         return {"status": "error", "message": str(e)}
 
 
+def generate_review_request_email(user_name: str) -> str:
+    review_link = "https://www.google.com/maps/place/?q=place_id:ChIJ74oyJcw_dAYRUtIGXk6HGzM"
+    first_name = user_name.split()[0] if user_name else "there"
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
+    <body style="margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; background-color:#f8fafc;">
+        <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc; padding:40px 20px;">
+            <tr><td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="background-color:#ffffff; border-radius:16px; overflow:hidden; box-shadow:0 4px 6px rgba(0,0,0,0.05);">
+                    <tr>
+                        <td style="background:linear-gradient(135deg,#1e40af 0%,#2563eb 100%); padding:40px; text-align:center;">
+                            <div style="font-size:48px; margin-bottom:12px;">⭐</div>
+                            <h1 style="margin:0; color:#ffffff; font-size:28px; font-weight:700;">How was your experience?</h1>
+                            <p style="margin:12px 0 0 0; color:#bfdbfe; font-size:15px;">We'd love to hear from you</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:40px;">
+                            <p style="font-size:16px; color:#334155; margin:0 0 16px;">Hi {first_name},</p>
+                            <p style="font-size:15px; color:#64748b; line-height:1.7; margin:0 0 16px;">
+                                Thank you for choosing <strong style="color:#1e293b;">Laundry Express Colchester</strong>! We hope your laundry was returned fresh, clean, and neatly folded — just the way you like it.
+                            </p>
+                            <p style="font-size:15px; color:#64748b; line-height:1.7; margin:0 0 32px;">
+                                We're a small local business and your feedback means the world to us. It only takes 30 seconds and helps other Colchester residents discover our service. Would you mind leaving us a quick Google review?
+                            </p>
+
+                            <div style="text-align:center; margin-bottom:32px;">
+                                <a href="{review_link}" style="display:inline-block; background:#2563eb; color:#ffffff; text-decoration:none; padding:16px 40px; border-radius:50px; font-weight:700; font-size:16px; letter-spacing:0.3px;">
+                                    ⭐ Leave a Google Review
+                                </a>
+                            </div>
+
+                            <div style="background-color:#f1f5f9; border-radius:12px; padding:20px; margin-bottom:32px; text-align:center;">
+                                <p style="margin:0; color:#64748b; font-size:14px; line-height:1.6;">
+                                    Just click the button above, sign in to Google, and share your honest experience.<br>
+                                    <strong style="color:#1e293b;">It really does make a difference — thank you! 🙏</strong>
+                                </p>
+                            </div>
+
+                            <p style="font-size:13px; color:#94a3b8; text-align:center; margin:0; border-top:1px solid #e2e8f0; padding-top:20px;">
+                                If you've already left us a review — thank you so much, please ignore this email!<br>
+                                Questions? Reply to this email or contact us at <a href="mailto:support@laundry-express.co.uk" style="color:#2563eb;">support@laundry-express.co.uk</a>
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="background-color:#1e3a5f; padding:24px; text-align:center;">
+                            <p style="margin:0 0 4px; color:#bfdbfe; font-size:14px; font-weight:600;">Laundry Express Colchester</p>
+                            <p style="margin:0; color:#93c5fd; font-size:13px;">Doorstep laundry &amp; dry cleaning · laundry-express.co.uk</p>
+                        </td>
+                    </tr>
+                </table>
+            </td></tr>
+        </table>
+    </body>
+    </html>
+    """
+
+
+async def send_review_request_to_all_users(users: list) -> dict:
+    sent, failed = 0, 0
+    for user in users:
+        if not user.get("email"):
+            continue
+        try:
+            html = generate_review_request_email(user.get("name", ""))
+            params = {
+                "from": SENDER_EMAIL,
+                "to": [user["email"]],
+                "subject": "How was your laundry? Leave us a quick Google review ⭐",
+                "html": html,
+            }
+            await asyncio.to_thread(resend.Emails.send, params)
+            sent += 1
+        except Exception as e:
+            logger.error(f"Failed to send review request to {user.get('email')}: {e}")
+            failed += 1
+    return {"sent": sent, "failed": failed}
+
+
 def send_password_reset_email(to_email: str, name: str, reset_link: str):
     html = f"""
     <!DOCTYPE html>

@@ -15,7 +15,7 @@ import { ProductManagement } from './ProductManagement';
 import api from '../utils/api';
 import { toast } from 'sonner';
 import { getUser } from '../utils/auth';
-import { GripVertical, MapPin, Clock, MessageSquare, Download, PenLine, Trash2, Eye, EyeOff, Users, TrendingUp, Search } from 'lucide-react';
+import { GripVertical, MapPin, Clock, MessageSquare, Download, PenLine, Trash2, Eye, EyeOff, Users, TrendingUp, Search, Star } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -566,6 +566,21 @@ export const Admin = () => {
                   <h2 className="text-xl font-semibold text-blue-600">Registered Users</h2>
                   <p className="text-sm text-slate-500 mt-1">{users.length} total customers</p>
                 </div>
+                <Button
+                  onClick={async () => {
+                    if (!window.confirm('Send a Google review request email to all customers who have placed at least one order?')) return;
+                    try {
+                      const res = await api.post('/admin/send-review-request');
+                      toast.success(res.data.message);
+                    } catch {
+                      toast.error('Failed to send review emails');
+                    }
+                  }}
+                  className="bg-amber-500 hover:bg-amber-600 text-white flex items-center gap-2 shrink-0"
+                >
+                  <Star className="h-4 w-4" />
+                  Request Google Reviews
+                </Button>
                 {users.length > 0 && (
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-slate-500 shrink-0">Sort by</span>
