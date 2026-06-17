@@ -846,7 +846,8 @@ async def get_google_reviews():
             return {"reviews": cached["reviews"], "rating": cached.get("rating"), "total_ratings": cached.get("total_ratings"), "source": "cache"}
 
     if not GOOGLE_PLACES_API_KEY or not GOOGLE_PLACE_ID:
-        return {"reviews": [], "rating": None, "total_ratings": None, "source": "unconfigured"}
+        return {"reviews": [], "rating": None, "total_ratings": None, "source": "unconfigured",
+                "debug": {"has_api_key": bool(GOOGLE_PLACES_API_KEY), "has_place_id": bool(GOOGLE_PLACE_ID)}}
 
     try:
         async with httpx.AsyncClient(timeout=10) as client_http:
