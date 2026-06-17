@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useRef } from 'react';
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Star } from 'lucide-react';
 import api from '../utils/api';
 
 const STATIC_REVIEWS = [
@@ -38,6 +38,24 @@ const STATIC_REVIEWS = [
     relative_time: "2 months ago",
     author_photo: "",
   },
+  {
+    author: "Tom H.",
+    rating: 5,
+    text: "Exceptional service — collected on time, everything returned perfectly clean and ironed. Saves me so much time every week.",
+    relative_time: "3 months ago",
+    author_photo: "",
+  },
+];
+
+const AVATAR_COLORS = [
+  'bg-emerald-600',
+  'bg-amber-600',
+  'bg-rose-600',
+  'bg-violet-600',
+  'bg-sky-600',
+  'bg-teal-600',
+  'bg-orange-600',
+  'bg-indigo-600',
 ];
 
 const StarRating = ({ rating }) => (
@@ -45,19 +63,47 @@ const StarRating = ({ rating }) => (
     {[1, 2, 3, 4, 5].map((star) => (
       <Star
         key={star}
-        className={`h-4 w-4 ${star <= rating ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-200 text-gray-200'}`}
+        className={`h-4 w-4 ${star <= rating ? 'fill-amber-400 text-amber-400' : 'fill-gray-200 text-gray-200'}`}
       />
     ))}
   </div>
 );
 
-const Avatar = ({ name, photo }) => {
+const Avatar = ({ name, photo, colorClass }) => {
   if (photo) {
-    return <img src={photo} alt={name} className="w-10 h-10 rounded-full object-cover" />;
+    return <img src={photo} alt={name} className="w-9 h-9 rounded-full object-cover flex-shrink-0" />;
   }
+  const initials = name
+    .split(' ')
+    .map(w => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase();
   return (
-    <div className="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0">
-      {name.charAt(0).toUpperCase()}
+    <div className={`w-9 h-9 rounded-full ${colorClass} flex items-center justify-center text-white font-semibold text-xs flex-shrink-0`}>
+      {initials}
+    </div>
+  );
+};
+
+const ReviewCard = ({ review, index }) => {
+  const colorClass = AVATAR_COLORS[index % AVATAR_COLORS.length];
+  return (
+    <div className="bg-white rounded-2xl p-5 shadow-sm border border-stone-100 break-inside-avoid mb-4">
+      <StarRating rating={review.rating} />
+      <p className="mt-3 text-stone-700 text-sm leading-relaxed">
+        "{review.text}"
+      </p>
+      <div className="flex items-center gap-2.5 mt-4">
+        <Avatar name={review.author} photo={review.author_photo} colorClass={colorClass} />
+        <div>
+          <p className="font-semibold text-stone-800 text-sm">{review.author}</p>
+          <div className="flex items-center gap-1 mt-0.5">
+            <span className="w-2 h-2 rounded-full bg-blue-500 inline-block"></span>
+            <span className="text-xs text-stone-400">Google review</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
@@ -66,9 +112,6 @@ export const GoogleReviews = () => {
   const [reviews, setReviews] = useState(STATIC_REVIEWS);
   const [overallRating, setOverallRating] = useState(5.0);
   const [totalRatings, setTotalRatings] = useState(null);
-  const [current, setCurrent] = useState(0);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const intervalRef = useRef(null);
 
   useEffect(() => {
     api.get('/reviews')
@@ -82,108 +125,35 @@ export const GoogleReviews = () => {
       .catch(() => {});
   }, []);
 
-  const startInterval = () => {
-    intervalRef.current = setInterval(() => {
-      goTo('next');
-    }, 5000);
-  };
-
-  useEffect(() => {
-    startInterval();
-    return () => clearInterval(intervalRef.current);
-  }, [reviews.length]);
-
-  const goTo = (direction) => {
-    if (isAnimating) return;
-    clearInterval(intervalRef.current);
-    setIsAnimating(true);
-    setTimeout(() => {
-      setCurrent(prev =>
-        direction === 'next'
-          ? (prev + 1) % reviews.length
-          : (prev - 1 + reviews.length) % reviews.length
-      );
-      setIsAnimating(false);
-      startInterval();
-    }, 200);
-  };
-
-  const review = reviews[current];
-
   return (
-    <section className="bg-slate-50 py-20 px-6">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-2 bg-white border border-stone-200 rounded-full px-4 py-1.5 mb-5">
+    <section className="py-16 px-6" style={{ background: 'linear-gradient(to bottom, #fdf6f0, #ffffff)' }}>
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center gap-2 bg-white border border-stone-200 rounded-full px-4 py-1.5 mb-4 shadow-sm">
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-4 h-4" />
             <span className="text-stone-500 font-medium text-sm">Google Reviews</span>
           </div>
-          <div className="flex items-center justify-center gap-4">
-            <span className="text-6xl font-bold text-stone-900">{Number(overallRating).toFixed(1)}</span>
+          <div className="flex items-center justify-center gap-3">
+            <span className="text-5xl font-bold text-stone-900">{Number(overallRating).toFixed(1)}</span>
             <div className="text-left">
               <StarRating rating={Math.round(overallRating)} />
-              {totalRatings
-                ? <p className="text-sm text-stone-400 mt-1">{totalRatings.toLocaleString()} reviews</p>
-                : <p className="text-sm text-stone-400 mt-1">Verified reviews</p>
-              }
+              <p className="text-sm text-stone-400 mt-1">
+                {totalRatings ? `${totalRatings.toLocaleString()} verified reviews` : 'Verified reviews'}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Review card */}
-        <div className="relative px-6">
-          <div
-            className={`bg-white border border-stone-100 rounded-2xl p-8 shadow-sm transition-opacity duration-200 ${isAnimating ? 'opacity-0' : 'opacity-100'}`}
-          >
-            <StarRating rating={review.rating} />
-            <p className="mt-5 text-stone-700 text-base leading-relaxed min-h-[80px] italic">
-              "{review.text}"
-            </p>
-            <div className="flex items-center gap-3 mt-7 pt-6 border-t border-stone-100">
-              <Avatar name={review.author} photo={review.author_photo} />
-              <div>
-                <p className="font-semibold text-stone-900 text-sm">{review.author}</p>
-                {review.relative_time && (
-                  <p className="text-xs text-stone-400 mt-0.5">{review.relative_time}</p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Nav arrows */}
-          <button
-            onClick={() => goTo('prev')}
-            className="absolute left-0 top-1/2 -translate-y-1/2 bg-white border border-stone-200 rounded-full p-2.5 shadow-sm hover:shadow-md hover:border-stone-300 transition-all cursor-pointer"
-            aria-label="Previous review"
-          >
-            <ChevronLeft className="h-4 w-4 text-stone-500" />
-          </button>
-          <button
-            onClick={() => goTo('next')}
-            className="absolute right-0 top-1/2 -translate-y-1/2 bg-white border border-stone-200 rounded-full p-2.5 shadow-sm hover:shadow-md hover:border-stone-300 transition-all cursor-pointer"
-            aria-label="Next review"
-          >
-            <ChevronRight className="h-4 w-4 text-stone-500" />
-          </button>
-        </div>
-
-        {/* Dots */}
-        <div className="flex justify-center gap-2 mt-7">
-          {reviews.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => { clearInterval(intervalRef.current); setCurrent(i); startInterval(); }}
-              className={`h-1.5 rounded-full transition-all cursor-pointer ${i === current ? 'bg-sky-500 w-6' : 'bg-slate-300 w-1.5'}`}
-              aria-label={`Review ${i + 1}`}
-            />
+        {/* Masonry grid — 1 col mobile, 2 col tablet, 3 col desktop */}
+        <div className="columns-1 sm:columns-2 lg:columns-3 gap-4">
+          {reviews.map((review, i) => (
+            <ReviewCard key={i} review={review} index={i} />
           ))}
         </div>
 
-        {/* Link to Google */}
-        <div className="text-center mt-8">
+        <div className="text-center mt-6">
           <a
-            href="https://www.google.com/maps/place/LAUNDRY+EXPRESS+COLCHESTER/@51.8815884,0.7757225,12z"
+            href="https://www.google.com/maps/place/LAUNDRY+EXPRESS+COLCHESTER/@51.8901771,0.8696583,17z"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-stone-500 hover:text-stone-700 font-medium text-sm transition-colors"
