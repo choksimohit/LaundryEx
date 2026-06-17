@@ -113,7 +113,7 @@ export const Admin = () => {
   const [users, setUsers] = useState([]);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [userSort, setUserSort] = useState({ key: 'created_at', dir: 'desc' });
-  const [reviewModal, setReviewModal] = useState({ open: false, loading: false, sending: false, eligible: [] });
+  const [reviewModal, setReviewModal] = useState({ open: false, loading: false, sending: false, eligible: [], selected: new Set() });
   const [orderSort, setOrderSort] = useState({ key: 'created_at', dir: 'desc' });
   const [orderFilter, setOrderFilter] = useState({ status: '', search: '' });
   const [business, setBusiness] = useState(null);
@@ -570,10 +570,11 @@ export const Admin = () => {
                 </div>
                 <Button
                   onClick={async () => {
-                    setReviewModal(m => ({ ...m, open: true, loading: true, eligible: [] }));
+                    setReviewModal(m => ({ ...m, open: true, loading: true, eligible: [], selected: new Set() }));
                     try {
                       const res = await api.get('/admin/review-request-preview');
-                      setReviewModal(m => ({ ...m, loading: false, eligible: res.data.eligible }));
+                      const eligible = res.data.eligible;
+                      setReviewModal(m => ({ ...m, loading: false, eligible, selected: new Set(eligible.map(u => u.email)) }));
                     } catch {
                       toast.error('Failed to load preview');
                       setReviewModal(m => ({ ...m, open: false, loading: false }));
@@ -603,21 +604,47 @@ export const Admin = () => {
                       </div>
                     ) : (
                       <>
-                        <p className="text-sm text-slate-500 mb-3">
-                          The following <span className="font-semibold text-slate-700">{reviewModal.eligible.length}</span> customer{reviewModal.eligible.length !== 1 ? 's' : ''} will receive a Google review request email:
-                        </p>
+                        <div className="flex items-center justify-between mb-3">
+                          <p className="text-sm text-slate-500">
+                            <span className="font-semibold text-slate-700">{reviewModal.selected.size}</span> of <span className="font-semibold text-slate-700">{reviewModal.eligible.length}</span> selected
+                          </p>
+                          <button
+                            className="text-xs text-blue-600 hover:underline"
+                            onClick={() => setReviewModal(m => ({
+                              ...m,
+                              selected: m.selected.size === m.eligible.length
+                                ? new Set()
+                                : new Set(m.eligible.map(u => u.email))
+                            }))}
+                          >
+                            {reviewModal.selected.size === reviewModal.eligible.length ? 'Deselect all' : 'Select all'}
+                          </button>
+                        </div>
                         <div className="max-h-64 overflow-y-auto border border-slate-100 rounded-xl divide-y divide-slate-50">
-                          {reviewModal.eligible.map((u, i) => (
-                            <div key={i} className="flex items-center gap-3 px-4 py-2.5">
-                              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-xs shrink-0">
-                                {(u.name || '?').charAt(0).toUpperCase()}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-sm font-medium text-slate-800 truncate">{u.name || '—'}</p>
-                                <p className="text-xs text-slate-400 truncate">{u.email}</p>
-                              </div>
-                            </div>
-                          ))}
+                          {reviewModal.eligible.map((u, i) => {
+                            const checked = reviewModal.selected.has(u.email);
+                            return (
+                              <label key={i} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer hover:bg-slate-50">
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={() => setReviewModal(m => {
+                                    const next = new Set(m.selected);
+                                    checked ? next.delete(u.email) : next.add(u.email);
+                                    return { ...m, selected: next };
+                                  })}
+                                  className="h-4 w-4 rounded border-slate-300 text-blue-600 cursor-pointer"
+                                />
+                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold text-xs shrink-0">
+                                  {(u.name || '?').charAt(0).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-medium text-slate-800 truncate">{u.name || '—'}</p>
+                                  <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                                </div>
+                              </label>
+                            );
+                          })}
                         </div>
                       </>
                     )}
@@ -629,11 +656,13 @@ export const Admin = () => {
                       {!reviewModal.loading && reviewModal.eligible.length > 0 && (
                         <Button
                           className="bg-amber-500 hover:bg-amber-600 text-white"
-                          disabled={reviewModal.sending}
+                          disabled={reviewModal.sending || reviewModal.selected.size === 0}
                           onClick={async () => {
                             setReviewModal(m => ({ ...m, sending: true }));
                             try {
-                              const res = await api.post('/admin/send-review-request');
+                              const res = await api.post('/admin/send-review-request', {
+                                selected_emails: [...reviewModal.selected]
+                              });
                               toast.success(res.data.message);
                               setReviewModal(m => ({ ...m, open: false, sending: false }));
                             } catch {
@@ -642,7 +671,7 @@ export const Admin = () => {
                             }
                           }}
                         >
-                          {reviewModal.sending ? 'Sending...' : `Send to ${reviewModal.eligible.length} customer${reviewModal.eligible.length !== 1 ? 's' : ''}`}
+                          {reviewModal.sending ? 'Sending...' : `Send to ${reviewModal.selected.size} customer${reviewModal.selected.size !== 1 ? 's' : ''}`}
                         </Button>
                       )}
                     </DialogFooter>

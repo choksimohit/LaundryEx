@@ -687,8 +687,12 @@ async def review_request_preview(admin: dict = Depends(get_admin_user)):
     return {"eligible": eligible, "count": len(eligible)}
 
 
+class ReviewRequestBody(BaseModel):
+    selected_emails: Optional[List[str]] = None
+
+
 @api_router.post("/admin/send-review-request")
-async def send_review_request(admin: dict = Depends(get_admin_user)):
+async def send_review_request(body: ReviewRequestBody = ReviewRequestBody(), admin: dict = Depends(get_admin_user)):
     emails_with_orders = set(await db.orders.distinct("user_email"))
 
     users = await db.users.find(
@@ -698,6 +702,7 @@ async def send_review_request(admin: dict = Depends(get_admin_user)):
 
     now = datetime.now(timezone.utc)
     thirty_days_ago = now - timedelta(days=30)
+    selected_set = set(body.selected_emails) if body.selected_emails else None
 
     eligible, skipped = [], 0
     for u in users:
@@ -712,6 +717,8 @@ async def send_review_request(admin: dict = Depends(get_admin_user)):
                     continue
             except Exception:
                 pass
+        if selected_set is not None and u.get("email") not in selected_set:
+            continue
         eligible.append(u)
 
     result = await send_review_request_to_all_users(eligible)
