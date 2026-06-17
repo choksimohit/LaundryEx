@@ -5,6 +5,7 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import api from '../utils/api';
 import { toast } from 'sonner';
+import { GoogleReviews } from '../components/GoogleReviews';
 
 export const Landing = () => {
   const [pinCode, setPinCode] = useState('');
@@ -92,6 +93,8 @@ export const Landing = () => {
           </div>
         </div>
       </div>
+
+      <GoogleReviews />
 
       <a
         href="https://wa.me/447777367076"
